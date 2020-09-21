@@ -32,8 +32,9 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
         console.log(req.body);
 
         let queryInput = JSON.stringify(req.body);
+
         let query = {};
-        let keys = Object(queryInput).keys();
+        let keys = Object.keys(queryInput);
 
         if (keys.contains("date")) {
             query.minute_id = {$regex: queryInput.date + ".*"};
