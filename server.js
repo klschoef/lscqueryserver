@@ -31,7 +31,7 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
     app.post("/query", (req, res) => {
         console.log(req.body);
 
-        let queryInput = JSON.stringify(req.body);
+        let queryInput = req.body;
 
         let query = {};
         let keys = Object.keys(queryInput);
