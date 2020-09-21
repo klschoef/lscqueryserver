@@ -32,10 +32,29 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
         console.log(req.body);
 
         let queryInput = JSON.stringify(req.body);
-        let query = {}
-        if (Object(queryInput).keys().contains("date")) {
-            query.minute_id = {minute_id: {$regex: "20150223.*"}};
+        let query = {};
+        let keys = Object(queryInput).keys();
+
+        if (keys.contains("date")) {
+            query.minute_id = {$regex: queryInput.date + ".*"};
         }
+
+        if (keys.contains("concepts")) {
+            query.concepts = {$all: queryInput.concepts};
+        }
+
+        if (keys.contains("attributes")) {
+            query.attributes = {$all: queryInput.attributes};
+        }
+        
+        if (keys.contains("objects")) {
+            query.objects = {$all: queryInput.objects};
+        }
+
+        if (keys.contains("latitude") && keys.contains("longitude")) {
+            query.location = {$near: {$geometry: {type: "Point", coordinates: [queryInput.longitude, queryInput.latitude]}, $maxDistance: 1000, $maxDistance: 0} }
+        }
+
         console.log(query);
 
         db.collection('images').find(query).toArray().then((docs) => {
