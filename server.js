@@ -41,15 +41,27 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
         }
 
         if (keys.includes("concepts")) {
-            query.concepts = {$all: queryInput.concepts};
+            if (Array.isArray(queryInput.concepts)) {
+                query.concepts = {$all: queryInput.concepts};
+            } else {
+                query.concepts = queryInput.concepts;
+            }
         }
 
         if (keys.includes("attributes")) {
-            query.attributes = {$all: queryInput.attributes};
+            if (Array.isArray(queryInput.attributes)) {
+                query.attributes = {$all: queryInput.attributes};
+            } else {
+                query.attributes = queryInput.attributes;
+            }
         }
         
         if (keys.includes("objects")) {
-            query.objects = {$all: queryInput.objects};
+            if (Array.isArray(queryInput.objects)) {
+                query.objects = {$all: queryInput.objects};
+            } else {
+                query.objects = queryInput.objects;
+            }
         }
 
         if (keys.includes("latitude") && keys.includes("longitude")) {
