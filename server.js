@@ -36,23 +36,23 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
         let query = {};
         let keys = Object.keys(queryInput);
 
-        if (keys.contains("date")) {
+        if (keys.includes("date")) {
             query.minute_id = {$regex: queryInput.date + ".*"};
         }
 
-        if (keys.contains("concepts")) {
+        if (keys.includes("concepts")) {
             query.concepts = {$all: queryInput.concepts};
         }
 
-        if (keys.contains("attributes")) {
+        if (keys.includes("attributes")) {
             query.attributes = {$all: queryInput.attributes};
         }
         
-        if (keys.contains("objects")) {
+        if (keys.includes("objects")) {
             query.objects = {$all: queryInput.objects};
         }
 
-        if (keys.contains("latitude") && keys.contains("longitude")) {
+        if (keys.includes("latitude") && keys.includes("longitude")) {
             query.location = {$near: {$geometry: {type: "Point", coordinates: [queryInput.longitude, queryInput.latitude]}, $maxDistance: 1000, $maxDistance: 0} }
         }
 
