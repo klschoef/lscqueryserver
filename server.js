@@ -65,7 +65,7 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
         }
 
         if (keys.includes("latitude") && keys.includes("longitude")) {
-            query.location = {$near: {$geometry: {type: "Point", coordinates: [queryInput.longitude, queryInput.latitude]}, $maxDistance: 1000} }
+            query.location = {$near: {$geometry: {type: "Point", coordinates: [queryInput.longitude, queryInput.latitude]}, $maxDistance: 10000} }
         }
 
         console.log(query);
