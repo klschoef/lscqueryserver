@@ -34,77 +34,25 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
 
         let queryInput = req.body;
 
-        let query = {};
-        let keys = Object.keys(queryInput);
-
-        if (keys.includes("date")) {
-            query.minute_id = {$regex: queryInput.date + ".*"};
+        switch (queryInput.type) {
+            case "filter":
+                filterQuery(queryInput, db, res);
+                break;
+            case "image":
+                filterImage(queryInput, db, res);
+                break;
+            case "hours":
+                filterHours(req, db, res);
+                break;
+            case "days":
+                filterDays(req, db, res);
+                break;
         }
-
-        if (keys.includes("concepts")) {
-            if (Array.isArray(queryInput.concepts)) {
-                query.concepts = {$all: queryInput.concepts};
-            } else {
-                query.concepts = queryInput.concepts;
-            }
-        }
-
-        if (keys.includes("attributes")) {
-            if (Array.isArray(queryInput.attributes)) {
-                query.attributes = {$all: queryInput.attributes};
-            } else {
-                query.attributes = queryInput.attributes;
-            }
-        }
-        
-        if (keys.includes("objects")) {
-            if (Array.isArray(queryInput.objects)) {
-                query.objects = {$all: queryInput.objects};
-            } else {
-                query.objects = queryInput.objects;
-            }
-        }
-
-        if (keys.includes("latitude") && keys.includes("longitude")) {
-            query.location = {$near: {$geometry: {type: "Point", coordinates: [queryInput.longitude, queryInput.latitude]}, $maxDistance: 10000} }
-        }
-
-        console.log(query);
-
-        db.collection('images').find(query).limit(5000).toArray().then((docs) => {
-            console.log(Object.keys(docs).length + " elements");
-            res.json(docs);
-        }).catch((err) => {
-            res.send({error:err});
-            console.log(err);
-        });
 
     });
 
     app.get("/images", (req,res) => {
         db.collection('images').find({}).limit(5000).toArray().then((docs) => {
-            res.json(docs);
-        }).catch((err) => {
-            res.send(err);
-            console.log(err);
-        });
-    })
-
-    app.get("/hours", (req,res) => {
-        console.log(req.body);
-        db.collection('hours').find({}).limit(1000).toArray().then((docs) => {
-            console.log(Object.keys(docs).length + " hours");
-            res.json(docs);
-        }).catch((err) => {
-            res.send(err);
-            console.log(err);
-        });
-    })
-
-    app.get("/days", (req,res) => {
-        console.log(req.body);
-        db.collection('days').find({}).limit(1000).toArray().then((docs) => {
-            console.log(Object.keys(docs).length + " days");
             res.json(docs);
         }).catch((err) => {
             res.send(err);
@@ -124,3 +72,85 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
         client.close();
     });*/
 });
+
+function filterDays(req, db, res) {
+    console.log(req.body);
+    db.collection('days').find({}).limit(1000).toArray().then((docs) => {
+        console.log(Object.keys(docs).length + " days");
+        res.json(docs);
+    }).catch((err) => {
+        res.send(err);
+        console.log(err);
+    });
+}
+
+function filterHours(req, db, res) {
+    console.log(req.body);
+    db.collection('hours').find({}).limit(1000).toArray().then((docs) => {
+        console.log(Object.keys(docs).length + " hours");
+        res.json(docs);
+    }).catch((err) => {
+        res.send(err);
+        console.log(err);
+    });
+}
+
+function filterQuery(queryInput, db, res) {
+    let query = {};
+    let keys = Object.keys(queryInput);
+    if (keys.includes("date")) {
+        query.minute_id = { $regex: queryInput.date + ".*" };
+    }
+    if (keys.includes("concepts")) {
+        if (Array.isArray(queryInput.concepts)) {
+            query.concepts = { $all: queryInput.concepts };
+        }
+        else {
+            query.concepts = queryInput.concepts;
+        }
+    }
+    if (keys.includes("attributes")) {
+        if (Array.isArray(queryInput.attributes)) {
+            query.attributes = { $all: queryInput.attributes };
+        }
+        else {
+            query.attributes = queryInput.attributes;
+        }
+    }
+    if (keys.includes("objects")) {
+        if (Array.isArray(queryInput.objects)) {
+            query.objects = { $all: queryInput.objects };
+        }
+        else {
+            query.objects = queryInput.objects;
+        }
+    }
+    if (keys.includes("latitude") && keys.includes("longitude")) {
+        query.location = { $near: { $geometry: { type: "Point", coordinates: [queryInput.longitude, queryInput.latitude] }, $maxDistance: 10000 } };
+    }
+    console.log(query);
+    db.collection('images').find(query).limit(5000).toArray().then((docs) => {
+        console.log(Object.keys(docs).length + " elements");
+        res.json(docs);
+    }).catch((err) => {
+        res.send({ error: err });
+        console.log(err);
+    });
+}
+
+
+function filterImage(queryInput, db, res) {
+    let query = {};
+    let keys = Object.keys(queryInput);
+
+    query._id = {_id: ObjectId(queryInput._id)};
+
+    console.log(query);
+    db.collection('images').find(query).toArray().then((docs) => {
+        console.log(Object.keys(docs).length + " image");
+        res.json(docs);
+    }).catch((err) => {
+        res.send({ error: err });
+        console.log(err);
+    });
+}
