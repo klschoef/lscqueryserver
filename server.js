@@ -71,7 +71,7 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
 
         console.log(query);
 
-        db.collection('images').find(query).limit(100).toArray().then((docs) => {
+        db.collection('images').find(query).toArray().then((docs) => {
             res.json(docs);
         }).catch((err) => {
             res.send(err);
