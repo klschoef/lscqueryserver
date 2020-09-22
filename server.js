@@ -91,7 +91,9 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
     })
 
     app.get("/hours", (req,res) => {
+        console.log(req.body);
         db.collection('hours').find({}).limit(1000).toArray().then((docs) => {
+            console.log(Object.keys(docs).length + " hours");
             res.json(docs);
         }).catch((err) => {
             res.send(err);
@@ -100,7 +102,9 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
     })
 
     app.get("/days", (req,res) => {
+        console.log(req.body);
         db.collection('days').find({}).limit(1000).toArray().then((docs) => {
+            console.log(Object.keys(docs).length + " days");
             res.json(docs);
         }).catch((err) => {
             res.send(err);
