@@ -10,8 +10,8 @@ const MongoClient = mongo.MongoClient;
 const url = 'mongodb://143.205.122.17';
 
 app.use(cors());  
-app.use('/dataset', express.static("dataset"));
-app.use('/dataset_thumbs', express.static("dataset_thumbs"));
+app.use('/dataset', express.static("../dataset/images"));
+app.use('/dataset_thumbs', express.static("../dataset/thumbs"));
 
 
 // bodyparser for sending different http request bodies
