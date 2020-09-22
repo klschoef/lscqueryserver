@@ -72,9 +72,10 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
         console.log(query);
 
         db.collection('images').find(query).toArray().then((docs) => {
+            console.log(Object.keys(docs).length + " elements");
             res.json(docs);
         }).catch((err) => {
-            res.send(err);
+            res.send({error:err});
             console.log(err);
         });
 
