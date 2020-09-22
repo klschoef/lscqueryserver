@@ -1,5 +1,7 @@
 const mongo = require("mongodb");
 const express = require("express");
+const cors = require('cors');
+const bodyParser = require('body-parser');
 
 const app = express();
 const port = 8080;
@@ -7,13 +9,12 @@ const MongoClient = mongo.MongoClient;
 
 const url = 'mongodb://143.205.122.17';
 
-
+app.use(cors());  
 app.use('/dataset', express.static("dataset"));
 app.use('/dataset_thumbs', express.static("dataset_thumbs"));
 
 
 // bodyparser for sending different http request bodies
-let bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({ extended: true }));     // support encoded bodies
 app.use(bodyParser.json());                             // support json encoded bodies
 
