@@ -71,7 +71,7 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
 
         console.log(query);
 
-        db.collection('images').find(query).toArray().then((docs) => {
+        db.collection('images').find(query).limit(5000).toArray().then((docs) => {
             console.log(Object.keys(docs).length + " elements");
             res.json(docs);
         }).catch((err) => {
@@ -82,7 +82,7 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
     });
 
     app.get("/images", (req,res) => {
-        db.collection('images').find({}).limit(100).toArray().then((docs) => {
+        db.collection('images').find({}).limit(5000).toArray().then((docs) => {
             res.json(docs);
         }).catch((err) => {
             res.send(err);
@@ -91,7 +91,7 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
     })
 
     app.get("/hours", (req,res) => {
-        db.collection('hours').find({}).limit(100).toArray().then((docs) => {
+        db.collection('hours').find({}).limit(1000).toArray().then((docs) => {
             res.json(docs);
         }).catch((err) => {
             res.send(err);
@@ -100,7 +100,7 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
     })
 
     app.get("/days", (req,res) => {
-        db.collection('days').find({}).limit(100).toArray().then((docs) => {
+        db.collection('days').find({}).limit(1000).toArray().then((docs) => {
             res.json(docs);
         }).catch((err) => {
             res.send(err);
