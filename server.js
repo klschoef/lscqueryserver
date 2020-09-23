@@ -103,7 +103,7 @@ function filterQuery(queryInput, db, res) {
     }
     if (keys.includes("concepts")) {
         if (Array.isArray(queryInput.concepts)) {
-            query["concepts.concept"] = { $all: queryInput.concepts } };
+            query["concepts.concept"] = { $all: queryInput.concepts };
         }
         else {
             query["concepts.concept"] = queryInput.concepts;
@@ -119,7 +119,7 @@ function filterQuery(queryInput, db, res) {
     }
     if (keys.includes("objects")) {
         if (Array.isArray(queryInput.objects)) {
-            query["objects.object"] = { $all: queryInput.objects } };
+            query["objects.object"] = { $all: queryInput.objects };
         }
         else {
             query["objects.object"] = queryInput.objects;
