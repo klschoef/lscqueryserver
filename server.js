@@ -102,6 +102,7 @@ function filterQuery(queryInput, db, res) {
         query.minute_id = { $regex: queryInput.date + ".*" };
     }
     if (keys.includes("concepts")) {
+        //db.images.find( { $and: [{ "concepts": { $elemMatch: {concept: "dorm_room", score: {$gte: 0.4} } } }, { "concepts": { $elemMatch: {concept: "hotel_room", score: {$gte: 0.1} } } }, { "objects": { $elemMatch: {object: "remote"} } } ]  } )
         if (Array.isArray(queryInput.concepts)) {
             query["concepts.concept"] = { $all: queryInput.concepts };
         }
