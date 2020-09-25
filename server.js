@@ -48,6 +48,12 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
             case "days":
                 filterDays(req, db, res);
                 break;
+            case "objects":
+                filterObjects(req, db, res);
+                break;
+            case "concepts":
+                filterConcepts(req, db, res);
+                break;
         }
 
     });
@@ -73,6 +79,28 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
         client.close();
     });*/
 });
+
+function filterConcepts(req, db, res) {
+    console.log(req.body);
+    db.collection('concepts').aggregate([{ $sort: {concept: 1} }]).toArray().then((docs) => {
+        console.log(Object.keys(docs).length + " concepts");
+        res.json(docs);
+    }).catch((err) => {
+        res.send(err);
+        console.log(err);
+    });
+}
+
+function filterObjects(req, db, res) {
+    console.log(req.body);
+    db.collection('objects').aggregate([{ $sort: {object: 1} }]).toArray().then((docs) => {
+        console.log(Object.keys(docs).length + " objects");
+        res.json(docs);
+    }).catch((err) => {
+        res.send(err);
+        console.log(err);
+    });
+}
 
 function filterDays(req, db, res) {
     console.log(req.body);
@@ -131,7 +159,7 @@ function filterQuery(queryInput, db, res) {
         query.location = { $near: { $geometry: { type: "Point", coordinates: [queryInput.longitude, queryInput.latitude] }, $maxDistance: 10000 } };
     }
     console.log(query);
-    db.collection('images').find(query).limit(5000).toArray().then((docs) => {
+    db.collection('images').find(query).limit(100).toArray().then((docs) => {
         console.log(Object.keys(docs).length + " elements");
         res.json(docs);
     }).catch((err) => {
