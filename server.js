@@ -2,6 +2,7 @@ const mongo = require("mongodb");
 const express = require("express");
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const ObjectID = require('bson').ObjectID
 
 const app = express();
 const port = 8080;
@@ -144,7 +145,7 @@ function filterImage(queryInput, db, res) {
     let query = {};
     let keys = Object.keys(queryInput);
 
-    query = {_id: "ObjectId(" + queryInput._id + ")"}; //ObjectId(queryInput._id)};
+    query = {_id: ObjectId(queryInput._id) }; //ObjectId(queryInput._id)};
 
     console.log(query);
     db.collection('images').find(query).toArray().then((docs) => {
