@@ -58,6 +58,14 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
 
     });
 
+    app.get("/concepts", (req,res) => {
+        filterConcepts(req, db, res);
+    })
+
+    app.get("/objects", (req,res) => {
+        filterObjects(req, db, res);
+    })
+
     app.get("/images", (req,res) => {
         db.collection('images').find({}).limit(5000).toArray().then((docs) => {
             res.json(docs);
