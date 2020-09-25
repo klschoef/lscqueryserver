@@ -144,7 +144,7 @@ function filterImage(queryInput, db, res) {
     let query = {};
     let keys = Object.keys(queryInput);
 
-    query._id = {_id: ObjectId(queryInput._id)};
+    query._id = {_id: "ObjectId(" + queryInput._id + ")"}; //ObjectId(queryInput._id)};
 
     console.log(query);
     db.collection('images').find(query).toArray().then((docs) => {
