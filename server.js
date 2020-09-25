@@ -149,8 +149,13 @@ function filterImage(queryInput, db, res) {
 
     console.log(query);
     db.collection('images').find(query).toArray().then((docs) => {
-        console.log(Object.keys(docs).length + " image");
-        res.json(docs);
+        let len = Object.keys(docs).length;
+        console.log(len + " image");
+        if (len == 1) {
+            res.json(docs[0]);
+        } else {
+            res.json(docs);
+        }
     }).catch((err) => {
         res.send({ error: err });
         console.log(err);
