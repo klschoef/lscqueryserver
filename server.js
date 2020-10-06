@@ -164,7 +164,7 @@ function filterQuery(queryInput, db, res) {
         }
     }
     if (keys.includes("latitude") && keys.includes("longitude")) {
-        let coord = [parseFloat(queryInput.longitude, parseFloat(queryInput.latitude))];
+        let coord = [parseFloat(queryInput.longitude), parseFloat(queryInput.latitude)];
         query["location"] = {$near: {$geometry: {type: "Point", coordinates: coord}, $maxDistance: 10000 }};
     }
     console.log(query);
