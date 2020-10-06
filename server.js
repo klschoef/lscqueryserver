@@ -168,7 +168,7 @@ function filterQuery(queryInput, db, res) {
     }
 
     console.log(query);
-    db.collection('images').find(query).limit(100).toArray().then((docs) => {
+    db.collection('images').find(query).limit(5000).toArray().then((docs) => {
         console.log(Object.keys(docs).length + " elements");
         res.json(docs);
     }).catch((err) => {
