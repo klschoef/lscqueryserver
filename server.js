@@ -164,7 +164,7 @@ function filterQuery(queryInput, db, res) {
         }
     }
     if (keys.includes("latitude") && keys.includes("longitude")) {
-        query.location = "{ $near: { $geometry: { type: 'Point', coordinates: [" + parseFloat(queryInput.longitude) +"," +parseFloat(queryInput.latitude) +"] }, $maxDistance: 10000 } }";
+        query.location = `{$near: {$geometry: {type: "Point", coordinates:[${parseFloat(queryInput.longitude)}, ${parseFloat(queryInput.latitude)}] }, $maxDistance: 10000 }}`;
     }
     console.log(query);
     db.collection('images').find(query).limit(100).toArray().then((docs) => {
