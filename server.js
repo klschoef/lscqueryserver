@@ -144,7 +144,7 @@ function filterQuery(queryInput, db, res) {
             query["concepts.concept"] = { $all: queryInput.concepts };
         }
         else {
-            query["concepts.concept"] = queryInput.concepts;
+            query["concepts"] = {$elemMatch: {concept: queryInput.concepts, score: {$gte: queryInput.g-score} } }; //queryInput.concepts;
         }
     }
     if (keys.includes("attributes")) {
@@ -160,13 +160,13 @@ function filterQuery(queryInput, db, res) {
             query["objects.object"] = { $all: queryInput.objects };
         }
         else {
-            query["objects.object"] = queryInput.objects;
+            query["objects"] = {$elemMatch: {object: queryInput.objects, score: {$gte: queryInput.g-score} } };
         }
     }
     if (keys.includes("latitude") && keys.includes("longitude")) {
-        //query.location = {$near: {$geometry: {type: "Point", coordinates: [parseFloat(queryInput.longitude), parseFloat(queryInput.latitude)]}, $maxDistance: 10000 }};
         query.location = { $near: { $geometry: { type: "Point", coordinates: [parseFloat(queryInput.longitude), parseFloat(queryInput.latitude)] }, $maxDistance: 10000 } };
     }
+
     console.log(query);
     db.collection('images').find(query).limit(100).toArray().then((docs) => {
         console.log(Object.keys(docs).length + " elements");
