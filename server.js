@@ -58,6 +58,10 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
 
     });
 
+    app.get("/attributes", (req,res) => {
+        filterAttributes(req, db, res);
+    })
+
     app.get("/concepts", (req,res) => {
         filterConcepts(req, db, res);
     })
@@ -87,6 +91,17 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
         client.close();
     });*/
 });
+
+function filterAttributes(req, db, res) {
+    console.log(req.body);
+    db.collection('attributes').aggregate([{ $sort: {attribute: 1} }]).toArray().then((docs) => {
+        console.log(Object.keys(docs).length + " attributes");
+        res.json(docs);
+    }).catch((err) => {
+        res.send(err);
+        console.log(err);
+    });
+}
 
 function filterConcepts(req, db, res) {
     console.log(req.body);
@@ -141,7 +156,15 @@ function filterQuery(queryInput, db, res) {
     if (keys.includes("concepts")) {
         //db.images.find( { $and: [{ "concepts": { $elemMatch: {concept: "dorm_room", score: {$gte: 0.4} } } }, { "concepts": { $elemMatch: {concept: "hotel_room", score: {$gte: 0.1} } } }, { "objects": { $elemMatch: {object: "remote"} } } ]  } )
         if (Array.isArray(queryInput.concepts)) {
-            query["concepts.concept"] = { $all: queryInput.concepts };
+            let queryArr = [];
+            let k=0;
+            for (k=0; k < queryInput.concepts.length; k++) {
+                let c = queryInput.concepts[k];
+                let partQuery = {$elemMatch: {concept: c, score: {$gte: 0.4} } };
+                queryArr.push(partQuery);
+            }
+            //query["concepts.concept"] = { $all: queryInput.concepts };
+            query["concepts"] = {$and: queryArr };
         }
         else {
             query["concepts"] = {$elemMatch: {concept: queryInput.concepts, score: {$gte: parseFloat(queryInput["g-score"])} } }; //queryInput.concepts;
@@ -164,11 +187,17 @@ function filterQuery(queryInput, db, res) {
         }
     }
     if (keys.includes("latitude") && keys.includes("longitude")) {
-        query.location = { $near: { $geometry: { type: "Point", coordinates: [parseFloat(queryInput.longitude), parseFloat(queryInput.latitude)] }, $maxDistance: 10 } };
+        query.location = { $near: { $geometry: { type: "Point", coordinates: [parseFloat(queryInput.longitude), parseFloat(queryInput.latitude)] }, $maxDistance: 30 } }; //within 30 meters
     }
 
     console.log(query);
-    db.collection('images').find(query).limit(5000).toArray().then((docs) => {
+    
+    let limit = 5000;
+    if (keys.includes["limit"]) {
+        limit = queryInput.limit;
+    }
+    
+    db.collection('images').find(query).limit(limit).toArray().then((docs) => {
         console.log(Object.keys(docs).length + " elements");
         res.json(docs);
     }).catch((err) => {
