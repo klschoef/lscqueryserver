@@ -167,7 +167,7 @@ function filterQuery(queryInput, db, res) {
             query = { $and: queryArr };
         }
         else {
-            let partQuery =  { $elemMatch: {concept: queryInput.concepts.key, score: {$gte: queryInput.concepts.score} } }; //queryInput.concepts;
+            let partQuery =  {concepts: { $elemMatch: {concept: queryInput.concepts.key, score: {$gte: queryInput.concepts.score} } } }; //queryInput.concepts;
             queryArr.push(partQuery);
         }
     }
@@ -178,13 +178,13 @@ function filterQuery(queryInput, db, res) {
             let k=0;
             for (k=0; k < queryInput.objects.length; k++) {
                 let o = queryInput.objects[k];
-                let partQuery = {objects: {$elemMatch: {object: o.key, score: {$gte: o.score} }} };
+                let partQuery = {objects: { $elemMatch: {object: o.key, score: {$gte: o.score} }} };
                 queryArr.push(partQuery);
             }
             query = { $and: queryArr };
         }
         else {
-            let partQuery = { $elemMatch: {object: queryInput.objects.key, score: {$gte: queryInput.objects.score} } };
+            let partQuery = {objects: { $elemMatch: {object: queryInput.objects.key, score: {$gte: queryInput.objects.score} } } };
             queryArr.push(partQuery);
         }
     }
