@@ -161,13 +161,16 @@ function filterQuery(queryInput, db, res) {
             for (k=0; k < queryInput.concepts.length; k++) {
                 let c = queryInput.concepts[k];
                 let partQuery = {concepts: {$elemMatch: {concept: c.key, score: {$gte: c.score} }} };
+                console.log("concept");
+                console.log(partQuery);
                 queryArr.push(partQuery);
             }
             //query["concepts.concept"] = { $all: queryInput.concepts };
-            query = { $and: queryArr };
         }
         else {
             let partQuery =  {concepts: { $elemMatch: {concept: queryInput.concepts.key, score: {$gte: queryInput.concepts.score} } } }; //queryInput.concepts;
+            console.log("final concept:");
+            console.log(partQuery);
             queryArr.push(partQuery);
         }
     }
@@ -179,12 +182,34 @@ function filterQuery(queryInput, db, res) {
             for (k=0; k < queryInput.objects.length; k++) {
                 let o = queryInput.objects[k];
                 let partQuery = {objects: { $elemMatch: {object: o.key, score: {$gte: o.score} }} };
+                console.log("object:");
+                console.log(partQuery);
                 queryArr.push(partQuery);
             }
-            query = { $and: queryArr };
         }
         else {
             let partQuery = {objects: { $elemMatch: {object: queryInput.objects.key, score: {$gte: queryInput.objects.score} } } };
+            console.log("final object:");
+            console.log(partQuery);
+            queryArr.push(partQuery);
+        }
+    }
+
+    if (keys.includes("attributes")) {
+        if (Array.isArray(queryInput.attributes)) {
+            let k=0;
+            for (k=0; k < queryInput.attributes.length; k++) {
+                let a = queryInput.attributes[k];
+                let partQuery = {attributes: a};
+                console.log("attribute:");
+                console.log(partQuery);
+                queryArr.push(partQuery);
+            }
+        }
+        else {
+            let partQuery = {attributes: queryInput.attributes};
+            console.log("final attribute:");
+            console.log(partQuery);
             queryArr.push(partQuery);
         }
     }
@@ -193,7 +218,9 @@ function filterQuery(queryInput, db, res) {
         query = {$and: queryArr};
     }
 
+    console.log("---------------------------------");
     console.log(query);
+    console.log("---------------------------------");
     
     let limit = 5000;
     if (keys.includes["limit"]) {
