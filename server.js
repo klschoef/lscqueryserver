@@ -151,6 +151,10 @@ function filterHours(req, db, res) {
 function filterQuery(queryInput, db, res) {
     let query = {};
     let keys = Object.keys(queryInput);
+
+    console.log("***************** NEW QUERY *****************");
+    console.log("keys:");
+    console.log(keys);
     
     let queryArr = [];
 
