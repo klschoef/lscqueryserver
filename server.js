@@ -232,14 +232,16 @@ function filterQuery(queryInput, db, res) {
         query = {$and: queryArr};
     }
 
-    console.log("---------------------------------");
-    console.log(query);
-    console.log("---------------------------------");
-    
     let limit = 5000;
     if (keys.includes["limit"]) {
         limit = queryInput.limit;
     }
+
+    console.log("---------------------------------");
+    console.log(query);
+    console.log("--------------------------------- (" + limit + ")");
+    
+
     
     db.collection('images').find(query).limit(limit).toArray().then((docs) => {
         console.log(Object.keys(docs).length + " elements");
