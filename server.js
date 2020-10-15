@@ -239,6 +239,7 @@ function filterQuery(queryInput, db, res) {
     let limit = 5000;
     if (keys.includes["limit"]) {
         limit = queryInput.limit;
+        console.log("limit = " + queryInput.limit);
     }
 
     console.log("---------------------------------");
