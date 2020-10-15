@@ -221,6 +221,10 @@ function filterQuery(queryInput, db, res) {
         queryArr.push(partQuery);
     }
 
+    if (keys.includes("latitude") && keys.includes("longitude")) {
+        let partQuery = {location:  {$near: { $geometry: { type: "Point", coordinates: [parseFloat(queryInput.longitude), parseFloat(queryInput.latitude)] }, $maxDistance: 30 } } }; //within 30 meters
+    }
+
     if (queryArr.length > 0) {
         query = {$and: queryArr};
     }
