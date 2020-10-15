@@ -160,14 +160,14 @@ function filterQuery(queryInput, db, res) {
             let k=0;
             for (k=0; k < queryInput.concepts.length; k++) {
                 let c = queryInput.concepts[k];
-                let partQuery = {$elemMatch: {concept: c, score: {$gte: 0.4} } };
+                let partQuery = {concepts: {$elemMatch: {concept: c.key, score: {$gte: c.score} }} };
                 queryArr.push(partQuery);
             }
             //query["concepts.concept"] = { $all: queryInput.concepts };
             query["concepts"] = {$and: queryArr };
         }
         else {
-            query["concepts"] = {$elemMatch: {concept: queryInput.concepts, score: {$gte: parseFloat(queryInput["g-score"])} } }; //queryInput.concepts;
+            query["concepts"] = {$elemMatch: {concept: queryInput.concepts.key, score: {$gte: queryInput.concepts.score} } }; //queryInput.concepts;
         }
     }
     if (keys.includes("attributes")) {
@@ -180,10 +180,18 @@ function filterQuery(queryInput, db, res) {
     }
     if (keys.includes("objects")) {
         if (Array.isArray(queryInput.objects)) {
-            query["objects.object"] = { $all: queryInput.objects };
+
+            let queryArr = [];
+            let k=0;
+            for (k=0; k < queryInput.objects.length; k++) {
+                let o = queryInput.objects[k];
+                let partQuery = {objects: {$elemMatch: {object: o.key, score: {$gte: o.score} }} };
+                queryArr.push(partQuery);
+            }
+            query["objects"] = {$and: queryArr };
         }
         else {
-            query["objects"] = {$elemMatch: {object: queryInput.objects, score: {$gte: parseFloat(queryInput["g-score"])} } };
+            query["objects"] = {$elemMatch: {object: queryInput.objects.key, score: {$gte: queryInput.objects.score} } };
         }
     }
     if (keys.includes("latitude") && keys.includes("longitude")) {
