@@ -214,6 +214,12 @@ function filterQuery(queryInput, db, res) {
         }
     }
 
+    if (keys.includes("date")) {
+        let partQuery = {$regex: queryInput.date + ".*"};
+        console.log("date: ");
+        console.log(partQuery);
+    }
+
     if (queryArr.length > 0) {
         query = {$and: queryArr};
     }
