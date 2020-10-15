@@ -164,10 +164,10 @@ function filterQuery(queryInput, db, res) {
                 queryArr.push(partQuery);
             }
             //query["concepts.concept"] = { $all: queryInput.concepts };
-            query["concepts"] = {$and: queryArr };
+            query.concepts = { $and: queryArr };
         }
         else {
-            query["concepts"] = {$elemMatch: {concept: queryInput.concepts.key, score: {$gte: queryInput.concepts.score} } }; //queryInput.concepts;
+            query.concepts = { $elemMatch: {concept: queryInput.concepts.key, score: {$gte: queryInput.concepts.score} } }; //queryInput.concepts;
         }
     }
     if (keys.includes("attributes")) {
@@ -188,10 +188,10 @@ function filterQuery(queryInput, db, res) {
                 let partQuery = {objects: {$elemMatch: {object: o.key, score: {$gte: o.score} }} };
                 queryArr.push(partQuery);
             }
-            query["objects"] = {$and: queryArr };
+            query.objects = { $and: queryArr };
         }
         else {
-            query["objects"] = {$elemMatch: {object: queryInput.objects.key, score: {$gte: queryInput.objects.score} } };
+            query.objects = { $elemMatch: {object: queryInput.objects.key, score: {$gte: queryInput.objects.score} } };
         }
     }
     if (keys.includes("latitude") && keys.includes("longitude")) {
