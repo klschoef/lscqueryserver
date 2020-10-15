@@ -215,7 +215,7 @@ function filterQuery(queryInput, db, res) {
     }
 
     if (keys.includes("date")) {
-        let partQuery = {$regex: queryInput.date + ".*"};
+        let partQuery = {minute_id: {$regex: queryInput.date + ".*"} };
         console.log("date: ");
         console.log(partQuery);
         queryArr.push(partQuery);
