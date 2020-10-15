@@ -147,7 +147,69 @@ function filterHours(req, db, res) {
     });
 }
 
+
 function filterQuery(queryInput, db, res) {
+    let query = {};
+    let keys = Object.keys(queryInput);
+    
+    let queryArr = [];
+
+    if (keys.includes("concepts")) {
+        //db.images.find( { $and: [{ "concepts": { $elemMatch: {concept: "dorm_room", score: {$gte: 0.4} } } }, { "concepts": { $elemMatch: {concept: "hotel_room", score: {$gte: 0.1} } } }, { "objects": { $elemMatch: {object: "remote"} } } ]  } )
+        if (Array.isArray(queryInput.concepts)) {
+            let k=0;
+            for (k=0; k < queryInput.concepts.length; k++) {
+                let c = queryInput.concepts[k];
+                let partQuery = {concepts: {$elemMatch: {concept: c.key, score: {$gte: c.score} }} };
+                queryArr.push(partQuery);
+            }
+            //query["concepts.concept"] = { $all: queryInput.concepts };
+            query = { $and: queryArr };
+        }
+        else {
+            let partQuery =  { $elemMatch: {concept: queryInput.concepts.key, score: {$gte: queryInput.concepts.score} } }; //queryInput.concepts;
+            queryArr.push(partQuery);
+        }
+    }
+
+
+    if (keys.includes("objects")) {
+        if (Array.isArray(queryInput.objects)) {
+            let k=0;
+            for (k=0; k < queryInput.objects.length; k++) {
+                let o = queryInput.objects[k];
+                let partQuery = {objects: {$elemMatch: {object: o.key, score: {$gte: o.score} }} };
+                queryArr.push(partQuery);
+            }
+            query = { $and: queryArr };
+        }
+        else {
+            let partQuery = { $elemMatch: {object: queryInput.objects.key, score: {$gte: queryInput.objects.score} } };
+            queryArr.push(partQuery);
+        }
+    }
+
+    if (queryArr.length > 0) {
+        query = {$and: queryArr};
+    }
+
+    console.log(query);
+    
+    let limit = 5000;
+    if (keys.includes["limit"]) {
+        limit = queryInput.limit;
+    }
+    
+    db.collection('images').find(query).limit(limit).toArray().then((docs) => {
+        console.log(Object.keys(docs).length + " elements");
+        res.json(docs);
+    }).catch((err) => {
+        res.send({ error: err });
+        console.log(err);
+    });
+}
+
+function filterQueryOLD(queryInput, db, res) {
     let query = {};
     let keys = Object.keys(queryInput);
     if (keys.includes("date")) {
@@ -164,7 +226,7 @@ function filterQuery(queryInput, db, res) {
                 queryArr.push(partQuery);
             }
             //query["concepts.concept"] = { $all: queryInput.concepts };
-            query.concepts = { $and: queryArr };
+            query = { $and: queryArr };
         }
         else {
             query.concepts = { $elemMatch: {concept: queryInput.concepts.key, score: {$gte: queryInput.concepts.score} } }; //queryInput.concepts;
@@ -188,7 +250,7 @@ function filterQuery(queryInput, db, res) {
                 let partQuery = {objects: {$elemMatch: {object: o.key, score: {$gte: o.score} }} };
                 queryArr.push(partQuery);
             }
-            query.objects = { $and: queryArr };
+            query = { $and: queryArr };
         }
         else {
             query.objects = { $elemMatch: {object: queryInput.objects.key, score: {$gte: queryInput.objects.score} } };
