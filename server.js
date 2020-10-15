@@ -218,6 +218,7 @@ function filterQuery(queryInput, db, res) {
         let partQuery = {$regex: queryInput.date + ".*"};
         console.log("date: ");
         console.log(partQuery);
+        queryArr.push(partQuery);
     }
 
     if (queryArr.length > 0) {
