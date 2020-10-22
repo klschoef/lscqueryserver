@@ -62,6 +62,10 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
         filterAttributes(req, db, res);
     })
 
+    app.get("/semanticlocations", (req,res) => {
+        filterSemanticLocations(req, db, res);
+    })
+
     app.get("/concepts", (req,res) => {
         filterConcepts(req, db, res);
     })
@@ -93,6 +97,17 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
 });
 
 function filterAttributes(req, db, res) {
+    console.log(req.body);
+    db.collection('attributes').aggregate([{ $sort: {attribute: 1} }]).toArray().then((docs) => {
+        console.log(Object.keys(docs).length + " attributes");
+        res.json(docs);
+    }).catch((err) => {
+        res.send(err);
+        console.log(err);
+    });
+}
+
+function filterSemanticLocations(req, db, res) {
     console.log(req.body);
     db.collection('attributes').aggregate([{ $sort: {attribute: 1} }]).toArray().then((docs) => {
         console.log(Object.keys(docs).length + " attributes");
@@ -245,9 +260,13 @@ function filterQuery(queryInput, db, res) {
     console.log(query);
     console.log("--------------------------------- (" + limit + ")");
     
+    let collection = 'images';
+    if (keys.includes("reduced") && queryInput.reduced == true) {
+        collection = 'uniqueimages';
+    }
 
     
-    db.collection('images').find(query).limit(limit).toArray().then((docs) => {
+    db.collection(collection).find(query).limit(limit).sort({time: 1}).toArray().then((docs) => {
         console.log(Object.keys(docs).length + " elements");
         res.json(docs);
     }).catch((err) => {
