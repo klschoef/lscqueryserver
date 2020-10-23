@@ -4,6 +4,17 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const {ObjectId} = require('mongodb'); //only for node version < 6: var ObjectId = require('mongodb').ObjectId
 
+
+var weekdaysDict = {
+    "monday": 1,
+    "tuesday": 2, 
+    "wednesday": 3,
+    "thursday": 4,
+    "friday": 5, 
+    "saturday": 6, 
+    "sunday": 0
+};
+
 const app = express();
 const port = 8080;
 const MongoClient = mongo.MongoClient;
@@ -240,10 +251,53 @@ function filterQuery(queryInput, db, res) {
         queryArr.push(partQuery);
     }
 
+    if (keys.includes("timenames")) {
+        let subqueries = [];
+        console.log("timenames: ");
+        let k=0;
+        for (k=0; k < queryInput.timenames.length; k++) {
+            let subquery = {timename: queryInput.timenames[k]};
+            console.log(subquery);
+            subqueries.push(subquery);
+        }
+        let partQuery = {$or: subqueries};
+        queryArr.push(partQuery);
+    }
+
+    if (keys.includes("weekdays")) {
+        let subqueries = [];
+        console.log("weekdays: ");
+        let k=0;
+        for (k=0; k < queryInput.weekdays.length; k++) {
+            let subquery = {weekday: weekdaysDict[queryInput.weekdays[k]]};
+            console.log(subquery);
+            subqueries.push(subquery);
+        }
+        let partQuery = {$or: subqueries};
+        queryArr.push(partQuery);
+    }
+
     if (keys.includes("latitude") && keys.includes("longitude")) {
-        let partQuery = {location:  {$near: { $geometry: { type: "Point", coordinates: [parseFloat(queryInput.longitude), parseFloat(queryInput.latitude)] }, $maxDistance: 30 } } }; //within 30 meters
+        let radius = 30;
+        if (keys.includes("radius")) {
+            radius = queryInput.radius;
+        }
+        let partQuery = {location:  {$near: { $geometry: { type: "Point", coordinates: [parseFloat(queryInput.longitude), parseFloat(queryInput.latitude)] }, $maxDistance: radius } } }; //within <radius> meters
         console.log("location:");
         console.log(partQuery);
+        queryArr.push(partQuery);
+    }
+
+    if (keys.includes("locations")) {
+        let subqueries = [];
+        console.log("semantic locations:");
+        let k=0;
+        for (k=0; k < queryInput.locations.length; k++) {
+            let subquery = {semanticname: queryInput.locations[k]};
+            console.log(subquery);
+            subqueries.push(subquery);
+        }
+        let partQuery = {$or: subqueries};
         queryArr.push(partQuery);
     }
 
