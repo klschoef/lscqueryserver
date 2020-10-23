@@ -252,29 +252,41 @@ function filterQuery(queryInput, db, res) {
     }
 
     if (keys.includes("timenames")) {
-        let subqueries = [];
-        console.log("timenames: ");
-        let k=0;
-        for (k=0; k < queryInput.timenames.length; k++) {
-            let subquery = {timename: queryInput.timenames[k]};
-            console.log(subquery);
-            subqueries.push(subquery);
+        if (Array.isArray(queryInput.timenames)) {
+            let subqueries = [];
+            console.log("timenames: ");
+            let k=0;
+            for (k=0; k < queryInput.timenames.length; k++) {
+                let subquery = {timename: queryInput.timenames[k]};
+                console.log(subquery);
+                subqueries.push(subquery);
+            }
+            let partQuery = {$or: subqueries};
+            queryArr.push(partQuery);
+        } else {
+            let partQuery = {timename: queryInput.timenames};
+            console.log(partQuery);
+            queryArr.push(partQuery);
         }
-        let partQuery = {$or: subqueries};
-        queryArr.push(partQuery);
     }
 
     if (keys.includes("weekdays")) {
-        let subqueries = [];
-        console.log("weekdays: ");
-        let k=0;
-        for (k=0; k < queryInput.weekdays.length; k++) {
-            let subquery = {weekday: weekdaysDict[queryInput.weekdays[k]]};
-            console.log(subquery);
-            subqueries.push(subquery);
+        if (Array.isArray(queryInput.weekdays)) {
+            let subqueries = [];
+            console.log("weekdays: ");
+            let k=0;
+            for (k=0; k < queryInput.weekdays.length; k++) {
+                let subquery = {weekday: weekdaysDict[queryInput.weekdays[k]]};
+                console.log(subquery);
+                subqueries.push(subquery);
+            }
+            let partQuery = {$or: subqueries};
+            queryArr.push(partQuery);
+        } else {
+            let partQuery = {weekday: weekdaysDict[queryInput.weekdays]};
+            console.log(partQuery);
+            queryArr.push(partQuery);
         }
-        let partQuery = {$or: subqueries};
-        queryArr.push(partQuery);
     }
 
     if (keys.includes("latitude") && keys.includes("longitude")) {
@@ -289,16 +301,22 @@ function filterQuery(queryInput, db, res) {
     }
 
     if (keys.includes("locations")) {
-        let subqueries = [];
-        console.log("semantic locations:");
-        let k=0;
-        for (k=0; k < queryInput.locations.length; k++) {
-            let subquery = {semanticname: queryInput.locations[k]};
-            console.log(subquery);
-            subqueries.push(subquery);
+        if (Array.isArray(queryInput.locations)) {
+            let subqueries = [];
+            console.log("semantic locations:");
+            let k=0;
+            for (k=0; k < queryInput.locations.length; k++) {
+                let subquery = {semanticname: queryInput.locations[k]};
+                console.log(subquery);
+                subqueries.push(subquery);
+            }
+            let partQuery = {$or: subqueries};
+            queryArr.push(partQuery);
+        } else {
+            let partQuery = {semanticname: queryInput.locations};
+            console.log(partQuery);
+            queryArr.push(partQuery);
         }
-        let partQuery = {$or: subqueries};
-        queryArr.push(partQuery);
     }
 
     if (queryArr.length > 0) {
