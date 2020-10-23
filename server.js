@@ -69,6 +69,18 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
 
     });
 
+    app.get("/semanticnames", (req,res) => {
+        filterSemanticnames(req, db, res);
+    })
+    
+    app.get("/timenames", (req,res) => {
+        filterTimenames(req, db, res);
+    })
+
+    app.get("/weekdays", (req,res) => {
+        filterWeekdays(req, db, res);
+    })
+
     app.get("/attributes", (req,res) => {
         filterAttributes(req, db, res);
     })
@@ -106,6 +118,39 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
         client.close();
     });*/
 });
+
+function filterSemanticnames(req, db, res) {
+    console.log(req.body);
+    db.collection('semanticnames').aggregate([{ $sort: {semanticname: 1} }]).toArray().then((docs) => {
+        console.log(Object.keys(docs).length + " semanticnames");
+        res.json(docs);
+    }).catch((err) => {
+        res.send(err);
+        console.log(err);
+    });
+}
+
+function filterTimenames(req, db, res) {
+    console.log(req.body);
+    db.collection('timenames').aggregate([{ $sort: {timename: 1} }]).toArray().then((docs) => {
+        console.log(Object.keys(docs).length + " timenames");
+        res.json(docs);
+    }).catch((err) => {
+        res.send(err);
+        console.log(err);
+    });
+}
+
+function filterWeekdays(req, db, res) {
+    console.log(req.body);
+    db.collection('weekdays').aggregate([{ $sort: {weekday: 1} }]).toArray().then((docs) => {
+        console.log(Object.keys(docs).length + " weekdays");
+        res.json(docs);
+    }).catch((err) => {
+        res.send(err);
+        console.log(err);
+    });
+}
 
 function filterAttributes(req, db, res) {
     console.log(req.body);
@@ -306,14 +351,14 @@ function filterQuery(queryInput, db, res) {
             console.log("semantic locations:");
             let k=0;
             for (k=0; k < queryInput.locations.length; k++) {
-                let subquery = {semanticname: queryInput.locations[k]};
+                let subquery = {semanticname: {$regex: ".*" + queryInput.locations[k] + ".*"}};
                 console.log(subquery);
                 subqueries.push(subquery);
             }
             let partQuery = {$or: subqueries};
             queryArr.push(partQuery);
         } else {
-            let partQuery = {semanticname: queryInput.locations};
+            let partQuery = {semanticname: {$regex: ".*" + queryInput.locations + ".*"}};
             console.log(partQuery);
             queryArr.push(partQuery);
         }
