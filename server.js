@@ -351,14 +351,14 @@ function filterQuery(queryInput, db, res) {
             console.log("semantic locations:");
             let k=0;
             for (k=0; k < queryInput.locations.length; k++) {
-                let subquery = {semanticname: {$regex: "/.*" + queryInput.locations[k] + ".*/i"}};
+                let subquery = {semanticname: {$regex: new RegExp(".*" + queryInput.locations[k] + ".*", "i")}};
                 console.log(subquery);
                 subqueries.push(subquery);
             }
             let partQuery = {$or: subqueries};
             queryArr.push(partQuery);
         } else {
-            let partQuery = {semanticname: {$regex: "/.*" + queryInput.locations + ".*/i"}};
+            let partQuery = {semanticname: {$regex: new RegExp(".*" + queryInput.locations + ".*", "i")}};
             console.log(partQuery);
             queryArr.push(partQuery);
         }
