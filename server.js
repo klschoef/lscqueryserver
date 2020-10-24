@@ -22,7 +22,7 @@ const MongoClient = mongo.MongoClient;
 const url = 'mongodb://143.205.122.17';
 
 app.use(cors());  
-app.use('/dataset', express.static("../dataset/images"));
+app.use('/images', express.static("../dataset/images"));
 app.use('/thumbs', express.static("../dataset/thumbs"));
 
 
