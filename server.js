@@ -23,7 +23,7 @@ const url = 'mongodb://143.205.122.17';
 
 app.use(cors());  
 app.use('/dataset', express.static("../dataset/images"));
-app.use('/dataset_thumbs', express.static("../dataset/thumbs"));
+app.use('/thumbs', express.static("../dataset/thumbs"));
 
 
 // bodyparser for sending different http request bodies
@@ -224,6 +224,7 @@ function filterQuery(queryInput, db, res) {
     let keys = Object.keys(queryInput);
 
     console.log("***************** NEW QUERY *****************");
+    console.log(queryInput);
     console.log("keys:");
     console.log(keys);
     
@@ -337,7 +338,7 @@ function filterQuery(queryInput, db, res) {
     if (keys.includes("latitude") && keys.includes("longitude")) {
         let radius = 30;
         if (keys.includes("radius")) {
-            radius = queryInput.radius;
+            radius = parseInt(queryInput.radius);
         }
         let partQuery = {location:  {$near: { $geometry: { type: "Point", coordinates: [parseFloat(queryInput.longitude), parseFloat(queryInput.latitude)] }, $maxDistance: radius } } }; //within <radius> meters
         console.log("location:");
@@ -370,7 +371,8 @@ function filterQuery(queryInput, db, res) {
 
     let limit = 5000;
     if (keys.includes("limit")) {
-        limit = queryInput.limit;
+        limit = parseInt(queryInput.limit);
+	console.log("limit set to: " + limit);
     }
 
     console.log("---------------------------------");
