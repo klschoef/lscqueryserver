@@ -380,7 +380,7 @@ function filterQuery(queryInput, db, res) {
     console.log("--------------------------------- (" + limit + ")");
     
     let collection = 'images';
-    if (keys.includes("reduced") && queryInput.reduced == true) {
+    if (keys.includes("reduced") && (queryInput.reduced == true || queryInput.reduced == 'true')) {
         collection = 'uniqueimages';
     }
 
