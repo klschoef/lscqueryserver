@@ -53,11 +53,8 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
             case "image":
                 filterImage(queryInput, db, res);
                 break;
-            case "hours":
-                filterHours(req, db, res);
-                break;
             case "days":
-                filterDays(req, db, res);
+                filterDays(queryInput, db, res);
                 break;
             case "objects":
                 filterObjects(req, db, res);
@@ -196,9 +193,9 @@ function filterObjects(req, db, res) {
     });
 }
 
-function filterDays(req, db, res) {
-    console.log(req.body);
-    db.collection('days').find({}).limit(1000).toArray().then((docs) => {
+function filterDays(queryInput, db, res) {
+    console.log(queryInput);
+    db.collection('days').find({$and: [{day_id: {$gt: queryInput.from}},{day_id: {$lt: queryInput.to}}]}).toArray().then((docs) => {
         console.log(Object.keys(docs).length + " days");
         res.json(docs);
     }).catch((err) => {
@@ -207,16 +204,6 @@ function filterDays(req, db, res) {
     });
 }
 
-function filterHours(req, db, res) {
-    console.log(req.body);
-    db.collection('hours').find({}).limit(1000).toArray().then((docs) => {
-        console.log(Object.keys(docs).length + " hours");
-        res.json(docs);
-    }).catch((err) => {
-        res.send(err);
-        console.log(err);
-    });
-}
 
 
 function filterQuery(queryInput, db, res) {
