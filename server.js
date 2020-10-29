@@ -185,7 +185,7 @@ function filterObjects(req, db, res) {
 
 function filterDays(queryInput, db, res) {
     console.log(queryInput);
-    db.collection('days').find({$and: [{day_id: {$gt: queryInput.from}},{day_id: {$lt: queryInput.to}}]}).toArray().then((docs) => {
+    db.collection('days').find({$and: [{day_id: {$gte: queryInput.from}},{day_id: {$lte: queryInput.to}}]}).toArray().then((docs) => {
         console.log(Object.keys(docs).length + " days");
         res.json(docs);
     }).catch((err) => {
