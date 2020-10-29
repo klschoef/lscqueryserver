@@ -5,16 +5,6 @@ const bodyParser = require('body-parser');
 const {ObjectId} = require('mongodb'); //only for node version < 6: var ObjectId = require('mongodb').ObjectId
 
 
-var weekdaysDict = {
-    "monday": 1,
-    "tuesday": 2, 
-    "wednesday": 3,
-    "thursday": 4,
-    "friday": 5, 
-    "saturday": 6, 
-    "sunday": 0
-};
-
 const app = express();
 const port = 8080;
 const MongoClient = mongo.MongoClient;
@@ -309,14 +299,14 @@ function filterQuery(queryInput, db, res) {
             console.log("weekdays: ");
             let k=0;
             for (k=0; k < queryInput.weekdays.length; k++) {
-                let subquery = {weekday: weekdaysDict[queryInput.weekdays[k]]};
+                let subquery = {weekday: queryInput.weekdays[k]};
                 console.log(subquery);
                 subqueries.push(subquery);
             }
             let partQuery = {$or: subqueries};
             queryArr.push(partQuery);
         } else {
-            let partQuery = {weekday: weekdaysDict[queryInput.weekdays]};
+            let partQuery = {weekday: queryInput.weekdays};
             console.log(partQuery);
             queryArr.push(partQuery);
         }
