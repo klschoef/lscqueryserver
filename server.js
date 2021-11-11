@@ -228,6 +228,26 @@ function filterQuery(queryInput, db, res) {
         }
     }
 
+    if (keys.includes("mstags")) {
+        if (Array.isArray(queryInput.mstags)) {
+            let k=0;
+            for (k=0; k < queryInput.mstags.length; k++) {
+                let c = queryInput.mstags[k];
+                let partQuery = {msconcepts: {$elemMatch: {concept: c.key, conf: {$gte: c.score} }} };
+                console.log("mstag");
+                console.log(partQuery);
+                queryArr.push(partQuery);
+            }
+            //query["concepts.concept"] = { $all: queryInput.concepts };
+        }
+        else {
+            let partQuery =  {msconcepts: { $elemMatch: {concept: queryInput.mstags.key, conf: {$gte: queryInput.mstags.score} } } }; //queryInput.concepts;
+            console.log("final mstag:");
+            console.log(partQuery);
+            queryArr.push(partQuery);
+        }
+    }
+
 
     if (keys.includes("objects")) {
         if (Array.isArray(queryInput.objects)) {
