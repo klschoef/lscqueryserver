@@ -80,6 +80,10 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
         filterConcepts(req, db, res);
     })
 
+    app.get("/days", (req,res) => {
+        filterDaySummaries(req, db, res);
+    })
+
     app.get("/mstags", (req,res) => {
         filterTags(req, db, res);
     })
@@ -192,6 +196,17 @@ function filterObjects(req, db, res) {
     console.log(req.body);
     db.collection('objects').aggregate([{ $sort: {object: 1} }]).toArray().then((docs) => {
         console.log(Object.keys(docs).length + " objects");
+        res.json(docs);
+    }).catch((err) => {
+        res.send(err);
+        console.log(err);
+    });
+}
+
+function filterDaySummaries(req, db, res) {
+    console.log(req.body);
+    db.collection('days').aggregate([{ $sort: {object: 1} }]).toArray().then((docs) => {
+        console.log(Object.keys(docs).length + " days");
         res.json(docs);
     }).catch((err) => {
         res.send(err);
