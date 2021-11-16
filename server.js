@@ -80,6 +80,10 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
         filterConcepts(req, db, res);
     })
 
+    app.get("/mstags", (req,res) => {
+        filteTags(req, db, res);
+    })
+
     app.get("/objects", (req,res) => {
         filterObjects(req, db, res);
     })
@@ -160,6 +164,18 @@ function filterSemanticLocations(req, db, res) {
         console.log(err);
     });
 }
+
+function filterTags(req, db, res) {
+    console.log(req.body);
+    db.collection('tags').aggregate([{ $sort: {concept: 1} }]).toArray().then((docs) => {
+        console.log(Object.keys(docs).length + " tags");
+        res.json(docs);
+    }).catch((err) => {
+        res.send(err);
+        console.log(err);
+    });
+}
+
 
 function filterConcepts(req, db, res) {
     console.log(req.body);
