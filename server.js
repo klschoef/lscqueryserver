@@ -81,7 +81,7 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
     })
 
     app.get("/mstags", (req,res) => {
-        filteTags(req, db, res);
+        filterTags(req, db, res);
     })
 
     app.get("/objects", (req,res) => {
