@@ -409,7 +409,8 @@ function filterQuery(queryInput, db, res) {
     
     let collection = 'images';
     if (keys.includes("reduced") && (queryInput.reduced == true || queryInput.reduced == 'true')) {
-        collection = 'uniqueimages';
+        //collection = 'uniqueimages';
+        let partQuery = {reduced: false}
     }
 
     
