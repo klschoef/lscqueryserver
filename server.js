@@ -393,6 +393,13 @@ function filterQuery(queryInput, db, res) {
         }
     }
 
+    let collection = 'images';
+    if (keys.includes("reduced") && (queryInput.reduced == true || queryInput.reduced == 'true')) {
+        //collection = 'uniqueimages';
+        let partQuery = {reduced: false}
+        queryArr.push(partQuery);
+    }
+
     if (queryArr.length > 0) {
         query = {$and: queryArr};
     }
@@ -406,12 +413,6 @@ function filterQuery(queryInput, db, res) {
     console.log("---------------------------------");
     console.log(query);
     console.log("--------------------------------- (" + limit + ")");
-    
-    let collection = 'images';
-    if (keys.includes("reduced") && (queryInput.reduced == true || queryInput.reduced == 'true')) {
-        //collection = 'uniqueimages';
-        let partQuery = {reduced: false}
-    }
 
     
     db.collection(collection).find(query).limit(limit).sort({time: 1}).toArray().then((docs) => {
