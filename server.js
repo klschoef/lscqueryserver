@@ -259,6 +259,25 @@ function filterQuery(queryInput, db, res) {
         }
     }
 
+    if (keys.includes("texts")) {
+        if (Array.isArray(queryInput.texts)) {
+            let k=0;
+            for (k=0; k < queryInput.texts.length; k++) {
+                let c = queryInput.texts[k];
+                let partQuery = {texts: {$elemMatch: {text: c }} };
+                console.log("concept");
+                console.log(partQuery);
+                queryArr.push(partQuery);
+            }
+        }
+        else {
+            let partQuery =  {texts: { $elemMatch: {text: queryInput.texts} } }; //queryInput.concepts;
+            console.log("final text:");
+            console.log(partQuery);
+            queryArr.push(partQuery);
+        }
+    }
+
     if (keys.includes("mstags")) {
         if (Array.isArray(queryInput.mstags)) {
             let k=0;
