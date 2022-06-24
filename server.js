@@ -9,11 +9,11 @@ const app = express();
 const port = 8080;
 const MongoClient = mongo.MongoClient;
 
-const url = 'mongodb://143.205.122.17';
+const url = 'mongodb://extreme00.itec.aau.at'; //'mongodb://143.205.122.17';
 
 app.use(cors());  
-app.use('/images', express.static("../dataset/images"));
-app.use('/thumbs', express.static("../dataset/thumbs"));
+//app.use('/images', express.static("../dataset/images"));
+//app.use('/thumbs', express.static("../dataset/thumbs"));
 
 
 // bodyparser for sending different http request bodies
@@ -414,73 +414,6 @@ function filterQuery(queryInput, db, res) {
 
     
     db.collection(collection).find(query).limit(limit).sort({time: 1}).toArray().then((docs) => {
-        console.log(Object.keys(docs).length + " elements");
-        res.json(docs);
-    }).catch((err) => {
-        res.send({ error: err });
-        console.log(err);
-    });
-}
-
-function filterQueryOLD(queryInput, db, res) {
-    let query = {};
-    let keys = Object.keys(queryInput);
-    if (keys.includes("date")) {
-        query.minute_id = { $regex: queryInput.date + ".*" };
-    }
-    if (keys.includes("concepts")) {
-        //db.images.find( { $and: [{ "concepts": { $elemMatch: {concept: "dorm_room", score: {$gte: 0.4} } } }, { "concepts": { $elemMatch: {concept: "hotel_room", score: {$gte: 0.1} } } }, { "objects": { $elemMatch: {object: "remote"} } } ]  } )
-        if (Array.isArray(queryInput.concepts)) {
-            let queryArr = [];
-            let k=0;
-            for (k=0; k < queryInput.concepts.length; k++) {
-                let c = queryInput.concepts[k];
-                let partQuery = {concepts: {$elemMatch: {concept: c.key, score: {$gte: c.score} }} };
-                queryArr.push(partQuery);
-            }
-            //query["concepts.concept"] = { $all: queryInput.concepts };
-            query = { $and: queryArr };
-        }
-        else {
-            query.concepts = { $elemMatch: {concept: queryInput.concepts.key, score: {$gte: queryInput.concepts.score} } }; //queryInput.concepts;
-        }
-    }
-    if (keys.includes("attributes")) {
-        if (Array.isArray(queryInput.attributes)) {
-            query.attributes = { $all: queryInput.attributes };
-        }
-        else {
-            query.attributes = queryInput.attributes;
-        }
-    }
-    if (keys.includes("objects")) {
-        if (Array.isArray(queryInput.objects)) {
-
-            let queryArr = [];
-            let k=0;
-            for (k=0; k < queryInput.objects.length; k++) {
-                let o = queryInput.objects[k];
-                let partQuery = {objects: {$elemMatch: {object: o.key, score: {$gte: o.score} }} };
-                queryArr.push(partQuery);
-            }
-            query = { $and: queryArr };
-        }
-        else {
-            query.objects = { $elemMatch: {object: queryInput.objects.key, score: {$gte: queryInput.objects.score} } };
-        }
-    }
-    if (keys.includes("latitude") && keys.includes("longitude")) {
-        query.location = { $near: { $geometry: { type: "Point", coordinates: [parseFloat(queryInput.longitude), parseFloat(queryInput.latitude)] }, $maxDistance: 30 } }; //within 30 meters
-    }
-
-    console.log(query);
-    
-    let limit = 5000;
-    if (keys.includes["limit"]) {
-        limit = queryInput.limit;
-    }
-    
-    db.collection('images').find(query).limit(limit).toArray().then((docs) => {
         console.log(Object.keys(docs).length + " elements");
         res.json(docs);
     }).catch((err) => {
