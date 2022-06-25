@@ -229,20 +229,6 @@ function filterQuery(queryInput, db, res) {
         }
     }
 
-    if (keys.includes("songs")) {
-        if (Array.isArray(queryInput.songs)) {
-            let partQuery = {song: {$in: queryInput.songs } }
-            console.log("songs");
-            console.log(partQuery);
-            queryArr.push(partQuery);
-        } else {
-            let partQuery = {song: {$in: [queryInput.songs] } }
-            console.log("song");
-            console.log(partQuery);
-            queryArr.push(partQuery);
-        }
-    }
-
     if (keys.includes("concepts")) {
         if (Array.isArray(queryInput.concepts)) {
             let k=0;
@@ -281,26 +267,6 @@ function filterQuery(queryInput, db, res) {
             queryArr.push(partQuery);
         }
     }
-
-    if (keys.includes("semanticnames")) {
-        if (Array.isArray(queryInput.semanticnames)) {
-            let k=0;
-            for (k=0; k < queryInput.semanticnames.length; k++) {
-                let c = queryInput.semanticnames[k];
-                let partQuery = {semanticname: {$in: queryInput.semanticnames} };
-                console.log("semanticnames");
-                console.log(partQuery);
-                queryArr.push(partQuery);
-            }
-        }
-        else {
-            let partQuery =  {semanticname: { $in: [queryInput.semanticnames]} }; 
-            console.log("semanticname:");
-            console.log(partQuery);
-            queryArr.push(partQuery);
-        }
-    }
-
 
     if (keys.includes("objects")) {
         if (Array.isArray(queryInput.objects)) {
@@ -410,6 +376,44 @@ function filterQuery(queryInput, db, res) {
             queryArr.push(partQuery);
         } else {
             let partQuery = {semanticname: {$regex: new RegExp(".*" + queryInput.locations + ".*", "i")}};
+            console.log(partQuery);
+            queryArr.push(partQuery);
+        }
+    }
+
+    if (keys.includes("captions")) {
+        if (Array.isArray(queryInput.captions)) {
+            let subqueries = [];
+            console.log("microsoft captions:");
+            let k=0;
+            for (k=0; k < queryInput.captions.length; k++) {
+                let subquery = {mscaption: {$regex: new RegExp(".*" + queryInput.captions[k] + ".*", "i")}};
+                console.log(subquery);
+                subqueries.push(subquery);
+            }
+            let partQuery = {$or: subqueries};
+            queryArr.push(partQuery);
+        } else {
+            let partQuery = {mscaption: {$regex: new RegExp(".*" + queryInput.captions + ".*", "i")}};
+            console.log(partQuery);
+            queryArr.push(partQuery);
+        }
+    }
+
+    if (keys.includes("songs")) {
+        if (Array.isArray(queryInput.songs)) {
+            let subqueries = [];
+            console.log("songs:");
+            let k=0;
+            for (k=0; k < queryInput.songs.length; k++) {
+                let subquery = {song: {$regex: new RegExp(".*" + queryInput.songs[k] + ".*", "i")}};
+                console.log(subquery);
+                subqueries.push(subquery);
+            }
+            let partQuery = {$or: subqueries};
+            queryArr.push(partQuery);
+        } else {
+            let partQuery = {song: {$regex: new RegExp(".*" + queryInput.songs + ".*", "i")}};
             console.log(partQuery);
             queryArr.push(partQuery);
         }
