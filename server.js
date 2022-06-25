@@ -27,7 +27,7 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
     const db = client.db("lsc");
 
     app.get("/", (req,res) => {
-        res.send("It works, dude!");
+        res.send("It has never been working better, dude!");
     })
 
     // body parameters
@@ -234,7 +234,7 @@ function filterDaySummaries(req, db, res) {
 
 function filterDays(queryInput, db, res) {
     console.log(queryInput);
-    db.collection('days').find({$and: [{day_id: {$gte: queryInput.from}},{day_id: {$lte: queryInput.to}}]}).toArray().then((docs) => {
+    db.collection('images').find({$and: [{minute_id: {$gte: queryInput.from}},{minute_id: {$lte: queryInput.to}}]}).toArray().then((docs) => {
         console.log(Object.keys(docs).length + " days");
         res.json(docs);
     }).catch((err) => {
