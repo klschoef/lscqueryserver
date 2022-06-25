@@ -234,7 +234,7 @@ function filterDaySummaries(req, db, res) {
 
 function filterDays(queryInput, db, res) {
     console.log(queryInput);
-    db.collection('images').find({$and: [{minute_id: {$gte: queryInput.from}},{minute_id: {$lte: queryInput.to}}]}).toArray().then((docs) => {
+    db.collection('days').find({$and: [{minute_id: {$gte: queryInput.from}},{minute_id: {$lte: queryInput.to}}]}).toArray().then((docs) => {
         console.log(Object.keys(docs).length + " days");
         res.json(docs);
     }).catch((err) => {
