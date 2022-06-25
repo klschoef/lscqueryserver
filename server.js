@@ -238,6 +238,15 @@ function filterQuery(queryInput, db, res) {
     
     let queryArr = [];
 
+    //{filename: {$in: ["20190102_091905_000"] } }
+
+    if (keys.includes("images")) {
+        let partQuery = {filename: {$in: queryInput.images } }
+        console.log("images");
+        console.log(partQuery);
+        queryArr.push(partQuery);
+    }
+
     if (keys.includes("concepts")) {
         //db.images.find( { $and: [{ "concepts": { $elemMatch: {concept: "dorm_room", score: {$gte: 0.4} } } }, { "concepts": { $elemMatch: {concept: "hotel_room", score: {$gte: 0.1} } } }, { "objects": { $elemMatch: {object: "remote"} } } ]  } )
         if (Array.isArray(queryInput.concepts)) {
