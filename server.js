@@ -183,7 +183,8 @@ function filterTags(req, db, res) {
 
 function filterConcepts(req, db, res) {
     console.log(req.body);
-    db.collection('concepts').aggregate([{ $sort: {concept: 1} }]).toArray().then((docs) => {
+    //db.collection('concepts').aggregate([{ $sort: {concept: 1} }]).toArray().then((docs) => {
+    db.collection('images').aggregate([ {$match: {}}, {$group: {_id: "$place365", count: {$sum: 1}}}, {$sort: {_id:1}} ], {allowDiskUse:true} ).toArray().then((docs) => {
         console.log(Object.keys(docs).length + " concepts");
         res.json(docs);
     }).catch((err) => {
@@ -252,7 +253,7 @@ function filterQuery(queryInput, db, res) {
             let k=0;
             for (k=0; k < queryInput.concepts.length; k++) {
                 let c = queryInput.concepts[k];
-                let partQuery = {$elemMatch: {place365: c.key, place365_score: {$gte: c.score} } };
+                let partQuery = {place365: c.key, place365_score: {$gte: c.score} };
                 console.log("concept");
                 console.log(partQuery);
                 queryArr.push(partQuery);
@@ -260,7 +261,7 @@ function filterQuery(queryInput, db, res) {
             //query["concepts.concept"] = { $all: queryInput.concepts };
         }
         else {
-            let partQuery =  {$elemMatch: {place365: queryInput.concepts.key, place365_score: {$gte: queryInput.concepts.score} } }; //queryInput.concepts;
+            let partQuery =  {place365: queryInput.concepts.key, place365_score: {$gte: queryInput.concepts.score} }; //queryInput.concepts;
             console.log("final concept:");
             console.log(partQuery);
             queryArr.push(partQuery);
