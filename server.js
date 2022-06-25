@@ -56,8 +56,9 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
 
     });
 
-    app.get("/semanticnames", (req,res) => {
-        filterSemanticnames(req, db, res);
+    app.get("/semanticnames", (req,res) => { //ok
+        //filterSemanticnames(req, db, res);
+        filterAnything(req, db, res, "$semanticname");
     })
     
     app.get("/timenames", (req,res) => {
@@ -65,7 +66,8 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
     })
 
     app.get("/weekdays", (req,res) => { //ok
-        filterWeekdays(req, db, res);
+        //filterWeekdays(req, db, res);
+        filterAnything(req, db, res, "$weekday");
     })
 
     app.get("/attributes", (req,res) => {
@@ -77,7 +79,53 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
     })
 
     app.get("/concepts", (req,res) => { //ok
-        filterConcepts(req, db, res);
+        //filterConcepts(req, db, res);
+        filterAnything(req, db, res, "$concepts.concept");
+    })
+
+    app.get("/places", (req,res) => { //ok
+        //filterPlaces(req, db, res);
+        filterAnything(req, db, res, "$places.place");
+    })
+
+    app.get("/songs", (req,res) => { //ok
+        //filterSongs(req, db, res);
+        filterAnything(req, db, res, "$song");
+    })
+
+    app.get("/timezones", (req,res) => { //ok
+        //filterTimezones(req, db, res);
+        filterAnything(req, db, res, "$time_zone");
+    })
+
+    app.get("/heartrates", (req,res) => { //ok
+        //filterHeartrates(req, db, res);
+        filterAnything(req, db, res, "$heart_rate");
+    })
+
+    app.get("/captions", (req,res) => { //ok
+        //filterCaptions(req, db, res);
+        filterAnything(req, db, res, "$mscaption");
+    })
+
+    app.get("/years", (req,res) => { //ok
+        //filterYears(req, db, res);
+        filterAnything(req, db, res, "$year");
+    })
+
+    app.get("/months", (req,res) => { //ok
+        //filterMonths(req, db, res);
+        filterAnything(req, db, res, "$month");
+    })
+
+    app.get("/days", (req,res) => { //ok
+        //filterDays(req, db, res);
+        filterAnything(req, db, res, "$day");
+    })
+
+    app.get("/dates", (req,res) => { //ok
+        //filterDates(req, db, res);
+        filterAnything(req, db, res, "$date");
     })
 
     app.get("/days", (req,res) => {
@@ -89,11 +137,13 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
     })
 
     app.get("/objects", (req,res) => { //ok
-        filterObjects(req, db, res);
+        //filterObjects(req, db, res);
+        filterAnything(req, db, res, "$objects.object");
     })
 
     app.get("/texts", (req,res) => { //ok
-        filterTexts(req, db, res);
+        //filterTexts(req, db, res);
+        filterAnything(req, db, res, "$texts.text");
     })
 
     app.get("/images", (req,res) => {
@@ -200,8 +250,96 @@ function filterTexts(req, db, res) {
 function filterConcepts(req, db, res) {
     console.log(req.body);
     //db.collection('concepts').aggregate([{ $sort: {concept: 1} }]).toArray().then((docs) => {
-    db.collection('images').aggregate([ {$match: {}}, {$group: {_id: "$place365", count: {$sum: 1}}}, {$sort: {_id:1}} ], {allowDiskUse:true} ).toArray().then((docs) => {
+    db.collection('images').aggregate([ {$match: {}}, {$group: {_id: "$concepts.concept", count: {$sum: 1}}}, {$sort: {_id:1}} ], {allowDiskUse:true} ).toArray().then((docs) => {
         console.log(Object.keys(docs).length + " concepts");
+        res.json(docs);
+    }).catch((err) => {
+        res.send(err);
+        console.log(err);
+    });
+}
+
+function filterPlaces(req, db, res) {
+    console.log(req.body);
+    db.collection('images').aggregate([ {$match: {}}, {$group: {_id: "$places.place", count: {$sum: 1}}}, {$sort: {_id:1}} ], {allowDiskUse:true} ).toArray().then((docs) => {
+        console.log(Object.keys(docs).length + " places");
+        res.json(docs);
+    }).catch((err) => {
+        res.send(err);
+        console.log(err);
+    });
+}
+
+function filterSongs(req, db, res) {
+    console.log(req.body);
+    db.collection('images').aggregate([ {$match: {}}, {$group: {_id: "$song", count: {$sum: 1}}}, {$sort: {_id:1}} ], {allowDiskUse:true} ).toArray().then((docs) => {
+        console.log(Object.keys(docs).length + " songs");
+        res.json(docs);
+    }).catch((err) => {
+        res.send(err);
+        console.log(err);
+    });
+}
+
+function filterSemanticnames(req, db, res) {
+    console.log(req.body);
+    db.collection('images').aggregate([ {$match: {}}, {$group: {_id: "$semanticname", count: {$sum: 1}}}, {$sort: {_id:1}} ], {allowDiskUse:true} ).toArray().then((docs) => {
+        console.log(Object.keys(docs).length + " semanticnames");
+        res.json(docs);
+    }).catch((err) => {
+        res.send(err);
+        console.log(err);
+    });
+}
+
+function filterTimezones(req, db, res) {
+    console.log(req.body);
+    db.collection('images').aggregate([ {$match: {}}, {$group: {_id: "$time_zone", count: {$sum: 1}}}, {$sort: {_id:1}} ], {allowDiskUse:true} ).toArray().then((docs) => {
+        console.log(Object.keys(docs).length + " time_zones");
+        res.json(docs);
+    }).catch((err) => {
+        res.send(err);
+        console.log(err);
+    });
+}
+
+function filterHeartrates(req, db, res) {
+    console.log(req.body);
+    db.collection('images').aggregate([ {$match: {}}, {$group: {_id: "$heart_rate", count: {$sum: 1}}}, {$sort: {_id:1}} ], {allowDiskUse:true} ).toArray().then((docs) => {
+        console.log(Object.keys(docs).length + " heart_rates");
+        res.json(docs);
+    }).catch((err) => {
+        res.send(err);
+        console.log(err);
+    });
+}
+
+function filterCaptions(req, db, res) {
+    console.log(req.body);
+    db.collection('images').aggregate([ {$match: {}}, {$group: {_id: "$mscaption", count: {$sum: 1}}}, {$sort: {_id:1}} ], {allowDiskUse:true} ).toArray().then((docs) => {
+        console.log(Object.keys(docs).length + " mscaptions");
+        res.json(docs);
+    }).catch((err) => {
+        res.send(err);
+        console.log(err);
+    });
+}
+
+function filterYears(req, db, res) {
+    console.log(req.body);
+    db.collection('images').aggregate([ {$match: {}}, {$group: {_id: "$year", count: {$sum: 1}}}, {$sort: {_id:1}} ], {allowDiskUse:true} ).toArray().then((docs) => {
+        console.log(Object.keys(docs).length + " years");
+        res.json(docs);
+    }).catch((err) => {
+        res.send(err);
+        console.log(err);
+    });
+}
+
+function filterAnything(req, db, res, name) {
+    console.log(req.body);
+    db.collection('images').aggregate([ {$match: {}}, {$group: {_id: name, count: {$sum: 1}}}, {$sort: {_id:1}} ], {allowDiskUse:true} ).toArray().then((docs) => {
+        console.log(Object.keys(docs).length + " " + name);
         res.json(docs);
     }).catch((err) => {
         res.send(err);
@@ -277,7 +415,7 @@ function filterQuery(queryInput, db, res) {
             let k=0;
             for (k=0; k < queryInput.concepts.length; k++) {
                 let c = queryInput.concepts[k];
-                let partQuery = {place365: c.key, place365_score: {$gte: c.score} };
+                let partQuery = {places: { $elemMatch: {place: c.key, score: {$gte: c.score} } } };
                 console.log("concept");
                 console.log(partQuery);
                 queryArr.push(partQuery);
@@ -285,7 +423,7 @@ function filterQuery(queryInput, db, res) {
             //query["concepts.concept"] = { $all: queryInput.concepts };
         }
         else {
-            let partQuery =  {place365: queryInput.concepts.key, place365_score: {$gte: queryInput.concepts.score} }; //queryInput.concepts;
+            let partQuery =  {places: {$elemMatch: {place: queryInput.concepts.key, score: {$gte: queryInput.concepts.score} } } }; //queryInput.concepts;
             console.log("final concept:");
             console.log(partQuery);
             queryArr.push(partQuery);
