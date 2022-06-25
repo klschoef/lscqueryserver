@@ -248,12 +248,11 @@ function filterQuery(queryInput, db, res) {
     }
 
     if (keys.includes("concepts")) {
-        //db.images.find( { $and: [{ "concepts": { $elemMatch: {concept: "dorm_room", score: {$gte: 0.4} } } }, { "concepts": { $elemMatch: {concept: "hotel_room", score: {$gte: 0.1} } } }, { "objects": { $elemMatch: {object: "remote"} } } ]  } )
         if (Array.isArray(queryInput.concepts)) {
             let k=0;
             for (k=0; k < queryInput.concepts.length; k++) {
                 let c = queryInput.concepts[k];
-                let partQuery = {concepts: {$elemMatch: {concept: c.key, score: {$gte: c.score} }} };
+                let partQuery = {$elemMatch: {place365: c.key, place365_score: {$gte: c.score} } };
                 console.log("concept");
                 console.log(partQuery);
                 queryArr.push(partQuery);
@@ -261,7 +260,7 @@ function filterQuery(queryInput, db, res) {
             //query["concepts.concept"] = { $all: queryInput.concepts };
         }
         else {
-            let partQuery =  {concepts: { $elemMatch: {concept: queryInput.concepts.key, score: {$gte: queryInput.concepts.score} } } }; //queryInput.concepts;
+            let partQuery =  {$elemMatch: {place365: queryInput.concepts.key, place365_score: {$gte: queryInput.concepts.score} } }; //queryInput.concepts;
             console.log("final concept:");
             console.log(partQuery);
             queryArr.push(partQuery);
