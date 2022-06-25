@@ -234,7 +234,7 @@ function filterQuery(queryInput, db, res) {
             let k=0;
             for (k=0; k < queryInput.concepts.length; k++) {
                 let c = queryInput.concepts[k];
-                let partQuery = {places: { $elemMatch: {place: c.key, score: {$gte: c.score} } } };
+                let partQuery = {concepts: { $elemMatch: {concept: c.key, score: {$gte: c.score} } } };
                 console.log("concept");
                 console.log(partQuery);
                 queryArr.push(partQuery);
@@ -242,8 +242,27 @@ function filterQuery(queryInput, db, res) {
             //query["concepts.concept"] = { $all: queryInput.concepts };
         }
         else {
-            let partQuery =  {places: {$elemMatch: {place: queryInput.concepts.key, score: {$gte: queryInput.concepts.score} } } }; //queryInput.concepts;
+            let partQuery =  {concepts: {$elemMatch: {concept: queryInput.concepts.key, score: {$gte: queryInput.concepts.score} } } }; //queryInput.concepts;
             console.log("final concept:");
+            console.log(partQuery);
+            queryArr.push(partQuery);
+        }
+    }
+
+    if (keys.includes("places")) {
+        if (Array.isArray(queryInput.places)) {
+            let k=0;
+            for (k=0; k < queryInput.places.length; k++) {
+                let c = queryInput.places[k];
+                let partQuery = {places: { $elemMatch: {place: c.key, score: {$gte: c.score} } } };
+                console.log("places");
+                console.log(partQuery);
+                queryArr.push(partQuery);
+            }
+        }
+        else {
+            let partQuery =  {places: {$elemMatch: {place: queryInput.places.key, score: {$gte: queryInput.places.score} } } }; 
+            console.log("final place:");
             console.log(partQuery);
             queryArr.push(partQuery);
         }
