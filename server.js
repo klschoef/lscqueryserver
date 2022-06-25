@@ -259,10 +259,17 @@ function filterQuery(queryInput, db, res) {
     //{filename: {$in: ["20190102_091905_000"] } }
 
     if (keys.includes("images")) {
-        let partQuery = {filename: {$in: queryInput.images } }
-        console.log("images");
-        console.log(partQuery);
-        queryArr.push(partQuery);
+        if (Array.isArray(queryInput.images)) {
+            let partQuery = {filename: {$in: queryInput.images } }
+            console.log("images");
+            console.log(partQuery);
+            queryArr.push(partQuery);
+        } else {
+            let partQuery = {filename: {$in: [queryInput.images] } }
+            console.log("image");
+            console.log(partQuery);
+            queryArr.push(partQuery);
+        }
     }
 
     if (keys.includes("concepts")) {
