@@ -57,74 +57,54 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
     });
 
     app.get("/semanticnames", (req,res) => { //ok
-        //filterSemanticnames(req, db, res);
         filterAnything(req, db, res, "$semanticname");
     })
     
     app.get("/timenames", (req,res) => {
-        filterTimenames(req, db, res);
+        filterAnything(req, db, res, "$timename");
     })
 
     app.get("/weekdays", (req,res) => { //ok
-        //filterWeekdays(req, db, res);
         filterAnything(req, db, res, "$weekday");
     })
 
-    app.get("/attributes", (req,res) => {
-        filterAttributes(req, db, res);
-    })
-
-    app.get("/semanticlocations", (req,res) => {
-        filterSemanticLocations(req, db, res);
-    })
-
     app.get("/concepts", (req,res) => { //ok
-        //filterConcepts(req, db, res);
         filterAnything(req, db, res, "$concepts.concept");
     })
 
     app.get("/places", (req,res) => { //ok
-        //filterPlaces(req, db, res);
         filterAnything(req, db, res, "$places.place");
     })
 
     app.get("/songs", (req,res) => { //ok
-        //filterSongs(req, db, res);
         filterAnything(req, db, res, "$song");
     })
 
     app.get("/timezones", (req,res) => { //ok
-        //filterTimezones(req, db, res);
         filterAnything(req, db, res, "$time_zone");
     })
 
     app.get("/heartrates", (req,res) => { //ok
-        //filterHeartrates(req, db, res);
         filterAnything(req, db, res, "$heart_rate");
     })
 
     app.get("/captions", (req,res) => { //ok
-        //filterCaptions(req, db, res);
         filterAnything(req, db, res, "$mscaption");
     })
 
     app.get("/years", (req,res) => { //ok
-        //filterYears(req, db, res);
         filterAnything(req, db, res, "$year");
     })
 
     app.get("/months", (req,res) => { //ok
-        //filterMonths(req, db, res);
         filterAnything(req, db, res, "$month");
     })
 
-    app.get("/days", (req,res) => { //ok
-        //filterDays(req, db, res);
+    app.get("/calendardays", (req,res) => { //ok
         filterAnything(req, db, res, "$day");
     })
 
     app.get("/dates", (req,res) => { //ok
-        //filterDates(req, db, res);
         filterAnything(req, db, res, "$date");
     })
 
@@ -132,17 +112,11 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
         filterDaySummaries(req, db, res);
     })
 
-    app.get("/mstags", (req,res) => {
-        filterTags(req, db, res);
-    })
-
     app.get("/objects", (req,res) => { //ok
-        //filterObjects(req, db, res);
         filterAnything(req, db, res, "$objects.object");
     })
 
     app.get("/texts", (req,res) => { //ok
-        //filterTexts(req, db, res);
         filterAnything(req, db, res, "$texts.text");
     })
 
@@ -168,167 +142,12 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
     });*/
 });
 
-function filterSemanticnames(req, db, res) {
-    console.log(req.body);
-    db.collection('semanticnames').aggregate([{ $sort: {semanticname: 1} }]).toArray().then((docs) => {
-        console.log(Object.keys(docs).length + " semanticnames");
-        res.json(docs);
-    }).catch((err) => {
-        res.send(err);
-        console.log(err);
-    });
-}
-
-function filterTimenames(req, db, res) {
-    console.log(req.body);
-    db.collection('timenames').aggregate([{ $sort: {timename: 1} }]).toArray().then((docs) => {
-        console.log(Object.keys(docs).length + " timenames");
-        res.json(docs);
-    }).catch((err) => {
-        res.send(err);
-        console.log(err);
-    });
-}
-
-function filterWeekdays(req, db, res) {
-    console.log(req.body);
-    //db.collection('weekdays').aggregate([{ $sort: {weekday: 1} }]).toArray().then((docs) => {
-    db.collection('images').aggregate([ {$match: {}}, {$group: {_id: "$weekday", count: {$sum: 1}}}, {$sort: {_id:1}} ], {allowDiskUse:true} ).toArray().then((docs) => {
-        console.log(Object.keys(docs).length + " weekdays");
-        res.json(docs);
-    }).catch((err) => {
-        res.send(err);
-        console.log(err);
-    });
-}
-
-function filterAttributes(req, db, res) {
-    console.log(req.body);
-    db.collection('attributes').aggregate([{ $sort: {attribute: 1} }]).toArray().then((docs) => {
-        console.log(Object.keys(docs).length + " attributes");
-        res.json(docs);
-    }).catch((err) => {
-        res.send(err);
-        console.log(err);
-    });
-}
-
-function filterSemanticLocations(req, db, res) {
-    console.log(req.body);
-    db.collection('attributes').aggregate([{ $sort: {attribute: 1} }]).toArray().then((docs) => {
-        console.log(Object.keys(docs).length + " attributes");
-        res.json(docs);
-    }).catch((err) => {
-        res.send(err);
-        console.log(err);
-    });
-}
-
-function filterTags(req, db, res) {
-    console.log(req.body);
-    db.collection('tags').aggregate([{ $sort: {concept: 1} }]).toArray().then((docs) => {
-        console.log(Object.keys(docs).length + " tags");
-        res.json(docs);
-    }).catch((err) => {
-        res.send(err);
-        console.log(err);
-    });
-}
-
-
-function filterTexts(req, db, res) {
-    console.log(req.body);
-    db.collection('images').aggregate([ {$match: {}}, {$group: {_id: "$texts.text", count: {$sum: 1}}}, {$sort: {_id:1}} ], {allowDiskUse:true} ).toArray().then((docs) => {
-        console.log(Object.keys(docs).length + " texts");
-        res.json(docs);
-    }).catch((err) => {
-        res.send(err);
-        console.log(err);
-    });
-}
 
 function filterConcepts(req, db, res) {
     console.log(req.body);
     //db.collection('concepts').aggregate([{ $sort: {concept: 1} }]).toArray().then((docs) => {
     db.collection('images').aggregate([ {$match: {}}, {$group: {_id: "$concepts.concept", count: {$sum: 1}}}, {$sort: {_id:1}} ], {allowDiskUse:true} ).toArray().then((docs) => {
         console.log(Object.keys(docs).length + " concepts");
-        res.json(docs);
-    }).catch((err) => {
-        res.send(err);
-        console.log(err);
-    });
-}
-
-function filterPlaces(req, db, res) {
-    console.log(req.body);
-    db.collection('images').aggregate([ {$match: {}}, {$group: {_id: "$places.place", count: {$sum: 1}}}, {$sort: {_id:1}} ], {allowDiskUse:true} ).toArray().then((docs) => {
-        console.log(Object.keys(docs).length + " places");
-        res.json(docs);
-    }).catch((err) => {
-        res.send(err);
-        console.log(err);
-    });
-}
-
-function filterSongs(req, db, res) {
-    console.log(req.body);
-    db.collection('images').aggregate([ {$match: {}}, {$group: {_id: "$song", count: {$sum: 1}}}, {$sort: {_id:1}} ], {allowDiskUse:true} ).toArray().then((docs) => {
-        console.log(Object.keys(docs).length + " songs");
-        res.json(docs);
-    }).catch((err) => {
-        res.send(err);
-        console.log(err);
-    });
-}
-
-function filterSemanticnames(req, db, res) {
-    console.log(req.body);
-    db.collection('images').aggregate([ {$match: {}}, {$group: {_id: "$semanticname", count: {$sum: 1}}}, {$sort: {_id:1}} ], {allowDiskUse:true} ).toArray().then((docs) => {
-        console.log(Object.keys(docs).length + " semanticnames");
-        res.json(docs);
-    }).catch((err) => {
-        res.send(err);
-        console.log(err);
-    });
-}
-
-function filterTimezones(req, db, res) {
-    console.log(req.body);
-    db.collection('images').aggregate([ {$match: {}}, {$group: {_id: "$time_zone", count: {$sum: 1}}}, {$sort: {_id:1}} ], {allowDiskUse:true} ).toArray().then((docs) => {
-        console.log(Object.keys(docs).length + " time_zones");
-        res.json(docs);
-    }).catch((err) => {
-        res.send(err);
-        console.log(err);
-    });
-}
-
-function filterHeartrates(req, db, res) {
-    console.log(req.body);
-    db.collection('images').aggregate([ {$match: {}}, {$group: {_id: "$heart_rate", count: {$sum: 1}}}, {$sort: {_id:1}} ], {allowDiskUse:true} ).toArray().then((docs) => {
-        console.log(Object.keys(docs).length + " heart_rates");
-        res.json(docs);
-    }).catch((err) => {
-        res.send(err);
-        console.log(err);
-    });
-}
-
-function filterCaptions(req, db, res) {
-    console.log(req.body);
-    db.collection('images').aggregate([ {$match: {}}, {$group: {_id: "$mscaption", count: {$sum: 1}}}, {$sort: {_id:1}} ], {allowDiskUse:true} ).toArray().then((docs) => {
-        console.log(Object.keys(docs).length + " mscaptions");
-        res.json(docs);
-    }).catch((err) => {
-        res.send(err);
-        console.log(err);
-    });
-}
-
-function filterYears(req, db, res) {
-    console.log(req.body);
-    db.collection('images').aggregate([ {$match: {}}, {$group: {_id: "$year", count: {$sum: 1}}}, {$sort: {_id:1}} ], {allowDiskUse:true} ).toArray().then((docs) => {
-        console.log(Object.keys(docs).length + " years");
         res.json(docs);
     }).catch((err) => {
         res.send(err);
@@ -410,6 +229,20 @@ function filterQuery(queryInput, db, res) {
         }
     }
 
+    if (keys.includes("songs")) {
+        if (Array.isArray(queryInput.songs)) {
+            let partQuery = {song: {$in: queryInput.songs } }
+            console.log("songs");
+            console.log(partQuery);
+            queryArr.push(partQuery);
+        } else {
+            let partQuery = {song: {$in: [queryInput.songs] } }
+            console.log("song");
+            console.log(partQuery);
+            queryArr.push(partQuery);
+        }
+    }
+
     if (keys.includes("concepts")) {
         if (Array.isArray(queryInput.concepts)) {
             let k=0;
@@ -449,21 +282,20 @@ function filterQuery(queryInput, db, res) {
         }
     }
 
-    if (keys.includes("mstags")) {
-        if (Array.isArray(queryInput.mstags)) {
+    if (keys.includes("semanticnames")) {
+        if (Array.isArray(queryInput.semanticnames)) {
             let k=0;
-            for (k=0; k < queryInput.mstags.length; k++) {
-                let c = queryInput.mstags[k];
-                let partQuery = {msconcepts: {$elemMatch: {concept: c.key, conf: {$gte: c.score} }} };
-                console.log("mstag");
+            for (k=0; k < queryInput.semanticnames.length; k++) {
+                let c = queryInput.semanticnames[k];
+                let partQuery = {semanticname: {$in: queryInput.semanticnames} };
+                console.log("semanticnames");
                 console.log(partQuery);
                 queryArr.push(partQuery);
             }
-            //query["concepts.concept"] = { $all: queryInput.concepts };
         }
         else {
-            let partQuery =  {msconcepts: { $elemMatch: {concept: queryInput.mstags.key, conf: {$gte: queryInput.mstags.score} } } }; //queryInput.concepts;
-            console.log("final mstag:");
+            let partQuery =  {semanticname: { $in: [queryInput.semanticnames]} }; 
+            console.log("semanticname:");
             console.log(partQuery);
             queryArr.push(partQuery);
         }
