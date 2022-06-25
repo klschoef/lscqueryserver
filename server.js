@@ -64,7 +64,7 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
         filterTimenames(req, db, res);
     })
 
-    app.get("/weekdays", (req,res) => {
+    app.get("/weekdays", (req,res) => { //ok
         filterWeekdays(req, db, res);
     })
 
@@ -76,7 +76,7 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
         filterSemanticLocations(req, db, res);
     })
 
-    app.get("/concepts", (req,res) => {
+    app.get("/concepts", (req,res) => { //ok
         filterConcepts(req, db, res);
     })
 
@@ -88,8 +88,12 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
         filterTags(req, db, res);
     })
 
-    app.get("/objects", (req,res) => {
+    app.get("/objects", (req,res) => { //ok
         filterObjects(req, db, res);
+    })
+
+    app.get("/texts", (req,res) => { //ok
+        filterTexts(req, db, res);
     })
 
     app.get("/images", (req,res) => {
@@ -138,7 +142,8 @@ function filterTimenames(req, db, res) {
 
 function filterWeekdays(req, db, res) {
     console.log(req.body);
-    db.collection('weekdays').aggregate([{ $sort: {weekday: 1} }]).toArray().then((docs) => {
+    //db.collection('weekdays').aggregate([{ $sort: {weekday: 1} }]).toArray().then((docs) => {
+    db.collection('images').aggregate([ {$match: {}}, {$group: {_id: "$weekday", count: {$sum: 1}}}, {$sort: {_id:1}} ], {allowDiskUse:true} ).toArray().then((docs) => {
         console.log(Object.keys(docs).length + " weekdays");
         res.json(docs);
     }).catch((err) => {
@@ -181,6 +186,17 @@ function filterTags(req, db, res) {
 }
 
 
+function filterTexts(req, db, res) {
+    console.log(req.body);
+    db.collection('images').aggregate([ {$match: {}}, {$group: {_id: "$texts.text", count: {$sum: 1}}}, {$sort: {_id:1}} ], {allowDiskUse:true} ).toArray().then((docs) => {
+        console.log(Object.keys(docs).length + " texts");
+        res.json(docs);
+    }).catch((err) => {
+        res.send(err);
+        console.log(err);
+    });
+}
+
 function filterConcepts(req, db, res) {
     console.log(req.body);
     //db.collection('concepts').aggregate([{ $sort: {concept: 1} }]).toArray().then((docs) => {
@@ -195,7 +211,8 @@ function filterConcepts(req, db, res) {
 
 function filterObjects(req, db, res) {
     console.log(req.body);
-    db.collection('objects').aggregate([{ $sort: {object: 1} }]).toArray().then((docs) => {
+    //db.collection('objects').aggregate([{ $sort: {object: 1} }]).toArray().then((docs) => {
+    db.collection('images').aggregate([ {$match: {}}, {$group: {_id: "$objects.object", count: {$sum: 1}}}, {$sort: {_id:1}} ], {allowDiskUse:true} ).toArray().then((docs) => {
         console.log(Object.keys(docs).length + " objects");
         res.json(docs);
     }).catch((err) => {
