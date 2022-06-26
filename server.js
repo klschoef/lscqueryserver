@@ -333,6 +333,7 @@ function filterQuery(queryInput, db, res) {
                 else if (mname == "winter")
                     months.concat([12,1,2,3]);
             }
+            console.log(months);
             partQuery = {month: {$in: months} }
             console.log("monthnames");
             console.log(partQuery);
