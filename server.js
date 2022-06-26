@@ -269,6 +269,39 @@ function filterQuery(queryInput, db, res) {
         }
     }
 
+    if (keys.includes("heartrates")) {
+        if (Array.isArray(queryInput.heartrates)) {
+            let partQuery = {heart_rate: {$in: queryInput.heartrates} }
+            console.log("heartrates");
+            console.log(partQuery);
+            queryArr.push(partQuery);
+        } else {
+            let partQuery = {heart_rate: {$in: [queryInput.heartrates] } }
+            console.log("heartrates");
+            console.log(partQuery);
+            queryArr.push(partQuery);
+        }
+    }
+
+    if (keys.includes("timezones")) {
+        if (Array.isArray(queryInput.timezones)) {
+            let subqueries = [];
+            console.log("timezones:");
+            let k=0;
+            for (k=0; k < queryInput.timezones.length; k++) {
+                let subquery = {time_zone: {$regex: new RegExp(".*" + queryInput.timezones[k] + ".*", "i")}};
+                console.log(subquery);
+                subqueries.push(subquery);
+            }
+            let partQuery = {$or: subqueries};
+            queryArr.push(partQuery);
+        } else {
+            let partQuery = {time_zone: {$regex: new RegExp(".*" + queryInput.timezones + ".*", "i")}};
+            console.log(partQuery);
+            queryArr.push(partQuery);
+        }
+    }
+
     if (keys.includes("months")) {
         if (Array.isArray(queryInput.months)) {
             let partQuery = {month: {$in: queryInput.months} }
@@ -346,7 +379,7 @@ function filterQuery(queryInput, db, res) {
             //query["concepts.concept"] = { $all: queryInput.concepts };
         }
         else {
-            let partQuery =  {concepts: {$elemMatch: {concept: queryInput.concepts.key, score: {$gte: queryInput.concepts.score} } } }; //queryInput.concepts;
+            let partQuery =  {concepts: { $elemMatch: {concept: queryInput.concepts.key, score: {$gte: queryInput.concepts.score} } } }; //queryInput.concepts;
             console.log("final concept:");
             console.log(partQuery);
             queryArr.push(partQuery);
@@ -365,7 +398,7 @@ function filterQuery(queryInput, db, res) {
             }
         }
         else {
-            let partQuery =  {places: {$elemMatch: {place: queryInput.places.key, score: {$gte: queryInput.places.score} } } }; 
+            let partQuery =  {places: { $elemMatch: {place: queryInput.places.key, score: {$gte: queryInput.places.score} } } }; 
             console.log("final place:");
             console.log(partQuery);
             queryArr.push(partQuery);
@@ -377,7 +410,7 @@ function filterQuery(queryInput, db, res) {
             let k=0;
             for (k=0; k < queryInput.texts.length; k++) {
                 let c = queryInput.texts[k];
-                let partQuery = {texts: {$elemMatch: {text: c }} };
+                let partQuery = {texts: { $elemMatch: {text: c }} };
                 console.log("concept");
                 console.log(partQuery);
                 queryArr.push(partQuery);
