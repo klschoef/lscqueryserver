@@ -323,7 +323,6 @@ function filterQuery(queryInput, db, res) {
             let months = []
             for (k=0; k < queryInput.monthnames.length; k++) {
                 let mname = queryInput.monthnames[k];
-                let partquery;
                 if (mname == "spring")
                     months.concat([3,4,5,6]);
                 else if (mname == "summer")
@@ -334,7 +333,7 @@ function filterQuery(queryInput, db, res) {
                     months.concat([12,1,2,3]);
             }
             console.log(months);
-            partQuery = {month: {$in: months} }
+            let partQuery = {month: {$in: months} }
             console.log("monthnames");
             console.log(partQuery);
             queryArr.push(partQuery);
