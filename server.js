@@ -320,17 +320,19 @@ function filterQuery(queryInput, db, res) {
     if (keys.includes("monthnames")) {        
         if (Array.isArray(queryInput.monthnames)) {
             let k=0;
+            let months = []
             for (k=0; k < queryInput.monthnames.length; k++) {
                 let mname = queryInput.monthnames[k];
                 let partquery;
                 if (mname == "spring")
-                    partQuery = {month: {$in: [3,4,5,6]} }
+                    months.push([3,4,5,6]);
                 else if (mname == "summer")
-                    partQuery = {month: {$in: [6,7,8,9]} }
+                    months.push([6,7,8,9]);
                 else if (mname == "fall")
-                    partQuery = {month: {$in: [9,10,11,12]} }
+                    months.push([9,10,11,12]);
                 else if (mname == "winter")
-                    partQuery = {month: {$in: [12,1,2,3]} }
+                    months.push([12,1,2,3]);
+                partQuery = {month: {$in: months} }
                 console.log("monthnames");
                 console.log(partQuery);
                 queryArr.push(partQuery);
