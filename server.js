@@ -69,11 +69,22 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
     })
 
     app.get("/concepts", (req,res) => { //ok
-        filterAnythingUnwind(req, db, res, "$concepts.concept", "$concepts");
+        filterConcepts(req, db, res);
+        //filterAnythingUnwind(req, db, res, "$concepts.concept", "$concepts");
     })
 
     app.get("/places", (req,res) => { //ok
-        filterAnythingUnwind(req, db, res, "$places.place", "$places");
+        filterPlaces(req, db, res);
+        //filterAnythingUnwind(req, db, res, "$places.place", "$places");
+    })
+
+    app.get("/objects", (req,res) => { //ok
+        filterObjects(req, db, res);
+        //filterAnythingUnwind(req, db, res, "$objects.object", "$objects");
+    })
+
+    app.get("/texts", (req,res) => { //ok
+        filterAnythingUnwind(req, db, res, "$texts.text", "$texts");
     })
 
     app.get("/songs", (req,res) => { //ok
@@ -112,14 +123,6 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
         filterDaySummaries(req, db, res);
     })
 
-    app.get("/objects", (req,res) => { //ok
-        filterAnythingUnwind(req, db, res, "$objects.object", "$objects");
-    })
-
-    app.get("/texts", (req,res) => { //ok
-        filterAnythingUnwind(req, db, res, "$texts.text", "$texts");
-    })
-
     app.get("/images", (req,res) => {
         db.collection('images').find({}).limit(5000).toArray().then((docs) => {
             res.json(docs);
@@ -143,17 +146,6 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
 });
 
 
-function filterConcepts(req, db, res) {
-    console.log(req.body);
-    //db.collection('concepts').aggregate([{ $sort: {concept: 1} }]).toArray().then((docs) => {
-    db.collection('images').aggregate([ {$match: {}}, {$group: {_id: "$concepts.concept", count: {$sum: 1}}}, {$sort: {_id:1}} ], {allowDiskUse:true} ).toArray().then((docs) => {
-        console.log(Object.keys(docs).length + " concepts");
-        res.json(docs);
-    }).catch((err) => {
-        res.send(err);
-        console.log(err);
-    });
-}
 
 function filterAnythingUnwind(req, db, res, name, unwindname) {
     console.log(req.body);
@@ -177,10 +169,33 @@ function filterAnything(req, db, res, name) {
     });
 }
 
+function filterPlaces(req, db, res) {
+    console.log(req.body);
+    db.collection('places').aggregate([{ $sort: {concept: 1} }]).toArray().then((docs) => {
+        console.log(Object.keys(docs).length + " places");
+        res.json(docs);
+    }).catch((err) => {
+        res.send(err);
+        console.log(err);
+    });
+}
+
+
+function filterConcepts(req, db, res) {
+    console.log(req.body);
+    db.collection('concepts').aggregate([{ $sort: {concept: 1} }]).toArray().then((docs) => {
+        console.log(Object.keys(docs).length + " concepts");
+        res.json(docs);
+    }).catch((err) => {
+        res.send(err);
+        console.log(err);
+    });
+}
+
+
 function filterObjects(req, db, res) {
     console.log(req.body);
-    //db.collection('objects').aggregate([{ $sort: {object: 1} }]).toArray().then((docs) => {
-    db.collection('images').aggregate([ {$match: {}}, {$group: {_id: "$objects.object", count: {$sum: 1}}}, {$sort: {_id:1}} ], {allowDiskUse:true} ).toArray().then((docs) => {
+    db.collection('objects').aggregate([{ $sort: {object: 1} }]).toArray().then((docs) => {
         console.log(Object.keys(docs).length + " objects");
         res.json(docs);
     }).catch((err) => {
