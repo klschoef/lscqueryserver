@@ -240,14 +240,14 @@ function filterQuery(queryInput, db, res) {
         }
     }
 
-    if (keys.includes("day")) {
-        if (Array.isArray(queryInput.day)) {
-            let partQuery = {day: {$in: queryInput.day} }
+    if (keys.includes("days")) {
+        if (Array.isArray(queryInput.days)) {
+            let partQuery = {day: {$in: queryInput.days} }
             console.log("days");
             console.log(partQuery);
             queryArr.push(partQuery);
         } else {
-            let partQuery = {day: {$in: [queryInput.day] } }
+            let partQuery = {day: {$in: [queryInput.days] } }
             console.log("day");
             console.log(partQuery);
             queryArr.push(partQuery);
