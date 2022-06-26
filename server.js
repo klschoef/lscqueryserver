@@ -323,13 +323,13 @@ function filterQuery(queryInput, db, res) {
             for (k=0; k < queryInput.monthnames.length; k++) {
                 let mname = queryInput.monthnames[k];
                 let partquery;
-                if (mname.localeCompare("spring"))
+                if (mname == "spring")
                     partQuery = {month: {$in: [3,4,5,6]} }
-                else if (mname.localeCompare("summer"))
+                else if (mname == "summer")
                     partQuery = {month: {$in: [6,7,8,9]} }
-                else if (mname.localeCompare("fall"))
+                else if (mname == "fall")
                     partQuery = {month: {$in: [9,10,11,12]} }
-                else if (mname.localeCompare("winter"))
+                else if (mname == "winter")
                     partQuery = {month: {$in: [12,1,2,3]} }
                 console.log("monthnames");
                 console.log(partQuery);
@@ -338,13 +338,13 @@ function filterQuery(queryInput, db, res) {
         } else {
             let mname = queryInput.monthnames;
             let partquery;
-            if (mname.localeCompare("spring"))
+            if (mname == "spring")
                 partQuery = {month: {$in: [3,4,5,6]} }
-            else if (mname.localeCompare("summer"))
+            else if (mname == "summer")
                 partQuery = {month: {$in: [6,7,8,9]} }
-            else if (mname.localeCompare("fall"))
+            else if (mname == "fall")
                 partQuery = {month: {$in: [9,10,11,12]} }
-            else if (mname.localeCompare("winter"))
+            else if (mname == "winter")
                 partQuery = {month: {$in: [12,1,2,3]} }
             console.log("monthnames");
             console.log(partQuery);
