@@ -306,12 +306,12 @@ function filterQuery(queryInput, db, res) {
 
     if (keys.includes("years")) {
         if (Array.isArray(queryInput.years)) {
-            let partQuery = {years: {$in: queryInput.years} }
+            let partQuery = {year: {$in: queryInput.years} }
             console.log("years");
             console.log(partQuery);
             queryArr.push(partQuery);
         } else {
-            let partQuery = {years: {$in: [queryInput.years] } }
+            let partQuery = {year: {$in: [queryInput.years] } }
             console.log("years");
             console.log(partQuery);
             queryArr.push(partQuery);
