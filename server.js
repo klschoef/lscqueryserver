@@ -69,11 +69,11 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
     })
 
     app.get("/concepts", (req,res) => { //ok
-        filterAnything(req, db, res, "$concepts.concept");
+        filterAnythingUnwind(req, db, res, "$concepts.concept", "$concepts");
     })
 
     app.get("/places", (req,res) => { //ok
-        filterAnything(req, db, res, "$places.place");
+        filterAnythingUnwind(req, db, res, "$places.place", "$places");
     })
 
     app.get("/songs", (req,res) => { //ok
@@ -113,11 +113,11 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
     })
 
     app.get("/objects", (req,res) => { //ok
-        filterAnything(req, db, res, "$objects.object");
+        filterAnythingUnwind(req, db, res, "$objects.object", "$objects");
     })
 
     app.get("/texts", (req,res) => { //ok
-        filterAnything(req, db, res, "$texts.text");
+        filterAnythingUnwind(req, db, res, "$texts.text", "$texts");
     })
 
     app.get("/images", (req,res) => {
@@ -148,6 +148,17 @@ function filterConcepts(req, db, res) {
     //db.collection('concepts').aggregate([{ $sort: {concept: 1} }]).toArray().then((docs) => {
     db.collection('images').aggregate([ {$match: {}}, {$group: {_id: "$concepts.concept", count: {$sum: 1}}}, {$sort: {_id:1}} ], {allowDiskUse:true} ).toArray().then((docs) => {
         console.log(Object.keys(docs).length + " concepts");
+        res.json(docs);
+    }).catch((err) => {
+        res.send(err);
+        console.log(err);
+    });
+}
+
+function filterAnythingUnwind(req, db, res, name, unwindname) {
+    console.log(req.body);
+    db.collection('images').aggregate([ {$match: {}}, {$unwind: unwindname}, {$group: {_id: name, count: {$sum: 1}}}, {$sort: {_id:1}} ], {allowDiskUse:true} ).toArray().then((docs) => {
+        console.log(Object.keys(docs).length + " " + name);
         res.json(docs);
     }).catch((err) => {
         res.send(err);
@@ -224,6 +235,84 @@ function filterQuery(queryInput, db, res) {
         } else {
             let partQuery = {filename: {$in: [queryInput.images] } }
             console.log("image");
+            console.log(partQuery);
+            queryArr.push(partQuery);
+        }
+    }
+
+    if (keys.includes("day")) {
+        if (Array.isArray(queryInput.day)) {
+            let partQuery = {day: {$in: queryInput.day} }
+            console.log("days");
+            console.log(partQuery);
+            queryArr.push(partQuery);
+        } else {
+            let partQuery = {day: {$in: [queryInput.day] } }
+            console.log("day");
+            console.log(partQuery);
+            queryArr.push(partQuery);
+        }
+    }
+
+    if (keys.includes("months")) {
+        if (Array.isArray(queryInput.months)) {
+            let partQuery = {month: {$in: queryInput.months} }
+            console.log("months");
+            console.log(partQuery);
+            queryArr.push(partQuery);
+        } else {
+            let partQuery = {month: {$in: [queryInput.months] } }
+            console.log("months");
+            console.log(partQuery);
+            queryArr.push(partQuery);
+        }
+    }
+
+    // 'monthnames' -> spring(3,4,5,6) summer(6,7,8,9) fall(9,10,11,12) winter(12,1,2,3)
+    if (keys.includes("monthnames")) {        
+        if (Array.isArray(queryInput.monthnames)) {
+            let k=0;
+            for (k=0; k < queryInput.monthnames.length; k++) {
+                let mname = queryInput.monthnames[k];
+                let partquery;
+                if (mname.localeCompare("spring"))
+                    partQuery = {month: {$in: [3,4,5,6]} }
+                else if (mname.localeCompare("summer"))
+                    partQuery = {month: {$in: [6,7,8,9]} }
+                else if (mname.localeCompare("fall"))
+                    partQuery = {month: {$in: [9,10,11,12]} }
+                else if (mname.localeCompare("winter"))
+                    partQuery = {month: {$in: [12,1,2,3]} }
+                console.log("monthnames");
+                console.log(partQuery);
+                queryArr.push(partQuery);
+            }
+        } else {
+            let mname = queryInput.monthnames;
+            let partquery;
+            if (mname.localeCompare("spring"))
+                partQuery = {month: {$in: [3,4,5,6]} }
+            else if (mname.localeCompare("summer"))
+                partQuery = {month: {$in: [6,7,8,9]} }
+            else if (mname.localeCompare("fall"))
+                partQuery = {month: {$in: [9,10,11,12]} }
+            else if (mname.localeCompare("winter"))
+                partQuery = {month: {$in: [12,1,2,3]} }
+            console.log("monthnames");
+            console.log(partQuery);
+            queryArr.push(partQuery);
+        }
+    }
+
+    if (keys.includes("years")) {
+        if (Array.isArray(queryInput.years)) {
+            let partQuery = {years: {$in: queryInput.years} }
+            console.log("years");
+            console.log(partQuery);
+            queryArr.push(partQuery);
+        } else {
+            let partQuery = {years: {$in: [queryInput.years] } }
+            console.log("years");
             console.log(partQuery);
             queryArr.push(partQuery);
         }
