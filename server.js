@@ -465,20 +465,19 @@ function filterQuery(queryInput, db, res) {
         }
     }
 
-    if (keys.includes("attributes")) {
-        if (Array.isArray(queryInput.attributes)) {
+    if (keys.includes("altitudes")) {
+        if (Array.isArray(queryInput.altitudes)) {
             let k=0;
-            for (k=0; k < queryInput.attributes.length; k++) {
-                let a = queryInput.attributes[k];
-                let partQuery = {attributes: a};
-                console.log("attribute:");
-                console.log(partQuery);
-                queryArr.push(partQuery);
+            for (k=0; k < queryInput.altitudes.length; k++) {
+                let subquery = {altitude: {$gt: queryInput.altitudes[k]-1, $lt: queryInput.altitudes[k]+1}};
+                console.log(subquery);
+                subqueries.push(subquery);
             }
+            let partQuery = {$or: subqueries};
         }
         else {
-            let partQuery = {attributes: queryInput.attributes};
-            console.log("final attribute:");
+            let partQuery = {altitude: {$gt: queryInput.altitudes-1, $lt: queryInput.altitudes+1}};
+            console.log("final altitude:");
             console.log(partQuery);
             queryArr.push(partQuery);
         }
