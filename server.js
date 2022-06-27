@@ -469,14 +469,14 @@ function filterQuery(queryInput, db, res) {
         if (Array.isArray(queryInput.altitudes)) {
             let k=0;
             for (k=0; k < queryInput.altitudes.length; k++) {
-                let subquery = {altitude: {$gt: queryInput.altitudes[k]-0.001, $lt: queryInput.altitudes[k]+0.001}};
+                let subquery = {altitude: {$gt: queryInput.altitudes[k]-0.005, $lt: queryInput.altitudes[k]+0.005}};
                 console.log(subquery);
                 subqueries.push(subquery);
             }
             let partQuery = {$or: subqueries};
         }
         else {
-            let partQuery = {altitude: {$gt: queryInput.altitudes-0.001, $lt: queryInput.altitudes+0.001}};
+            let partQuery = {altitude: {$gt: queryInput.altitudes-0.005, $lt: queryInput.altitudes+0.05}};
             console.log("final altitude:");
             console.log(partQuery);
             queryArr.push(partQuery);
