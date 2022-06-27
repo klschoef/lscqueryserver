@@ -9,7 +9,8 @@ const app = express();
 const port = 8080;
 const MongoClient = mongo.MongoClient;
 
-const url = 'mongodb://extreme00.itec.aau.at'; //'mongodb://143.205.122.17';
+const config = require('config');
+const url = config.get('mongo.url'); //'mongodb://extreme00.itec.aau.at'; //'mongodb://143.205.122.17';
 
 app.use(cors());  
 //app.use('/images', express.static("../dataset/images"));
