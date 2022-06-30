@@ -648,7 +648,7 @@ function filterQuery(queryInput, db, res) {
                     }
                 }
 
-                if (docs[pos] != null) {
+                if (pos != -1 && docs[pos] != null) {
                     docsReranked.push(docs[pos]);
                     //docs.splice(pos,1);
                 } else {
