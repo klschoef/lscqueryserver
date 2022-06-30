@@ -651,22 +651,10 @@ function filterQuery(queryInput, db, res) {
                 if (pos != -1 && docs[pos] != null) {
                     docsReranked.push(docs[pos]);
                     docs.splice(pos,1);
-                } else {
+                } /*else {
                     console.log(" ignored: " + needle + " (len of docs: " + docs.length + "), from=" + from + " to=" + to + " pos=" + pos);
-                }
+                }*/
 
-                /*
-                for (j = from; j < Object.keys(docs).length; j++) {
-                    let doc = docs[j];
-                    if (doc.filename == queryInput.images[k]) {
-                        docsReranked.push(doc);
-                        docs.splice(j,1);
-                        break;
-                    } else {
-
-                    }
-                }
-                */
             }
             res.json(docsReranked);
         } else {
