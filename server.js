@@ -625,10 +625,10 @@ function filterQuery(queryInput, db, res) {
         if (keys.includes("images") && Array.isArray(queryInput.images)) {
             let k=0;
             let j=0;
-            let needle = queryInput.images[k];
 
             //binary search for needle
             for (k=0; k < queryInput.images.length; k++) {    
+                let needle = queryInput.images[k];
                 let from = 0;
                 let to = Object.keys(docs).length-1;
                 let pos = -1;
