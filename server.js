@@ -632,9 +632,10 @@ function filterQuery(queryInput, db, res) {
                 let from = 0;
                 let to = Object.keys(docs).length-1;
                 let pos = -1;
-                
+
                 while (from <= to) {
-                    m = (from + to)/2;
+                    let m = (from + to)/2;
+                    console.log(m + " ");
                     let filename = docs[m].filename;
                     if (needle == filename) {
                         pos = m;
