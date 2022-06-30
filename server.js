@@ -648,8 +648,12 @@ function filterQuery(queryInput, db, res) {
                     }
                 }
 
-                docsReranked.push(docs[pos]);
-                docs.splice(pos,1);
+                if (docs[pos] != null) {
+                    docsReranked.push(docs[pos]);
+                    docs.splice(pos,1);
+                } else {
+                    console.log(pos + " ignored");
+                }
 
                 /*
                 for (j = from; j < Object.keys(docs).length; j++) {
