@@ -630,7 +630,7 @@ function filterQuery(queryInput, db, res) {
             for (k=0; k < queryInput.images.length; k++) {    
                 let needle = queryInput.images[k];
                 let from = 0;
-                let to = Object.keys(docs).length-1;
+                let to = docs.length-1;
                 let pos = -1;
 
                 while (from <= to) {
