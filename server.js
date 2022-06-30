@@ -243,7 +243,7 @@ function filterQuery(queryInput, db, res) {
     //{filename: {$in: ["20190102_091905_000"] } }
 
     if (keys.includes("images")) {
-        if (Array.isArray(queryInput.images)) {
+        if (Array.isArray(queryInput.images)) {            
             let partQuery = {filename: {$in: queryInput.images } }
             console.log("images");
             console.log(partQuery);
@@ -620,7 +620,10 @@ function filterQuery(queryInput, db, res) {
 
     
     db.collection(collection).find(query).limit(limit).sort({filename: 1}).toArray().then((docs) => {
-        console.log(Object.keys(docs).length + " elements");
+        console.log(docs.length + " elements");
+        if (Array.isArray(queryInput.images)) {
+            console.log("We searched for " + queryInput.images.length + " images!");
+        }
         let docsReranked = [];
         if (keys.includes("images") && Array.isArray(queryInput.images)) {
             let k=0;
