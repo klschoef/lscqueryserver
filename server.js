@@ -650,7 +650,7 @@ function filterQuery(queryInput, db, res) {
 
                 if (docs[pos] != null) {
                     docsReranked.push(docs[pos]);
-                    docs.splice(pos,1);
+                    //docs.splice(pos,1);
                 } else {
                     console.log(" ignored: " + needle + " (len of docs: " + docs.length + "), from=" + from + " to=" + to + " pos=" + pos);
 
