@@ -652,7 +652,7 @@ function filterQuery(queryInput, db, res) {
                     docsReranked.push(docs[pos]);
                     docs.splice(pos,1);
                 } else {
-                    console.log(pos + " ignored");
+                    console.log(pos + " ignored: " + needle + " (len of docs: " + docs.length + ")");
                 }
 
                 /*
