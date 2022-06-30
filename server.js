@@ -655,13 +655,11 @@ function filterQuery(queryInput, db, res) {
                     console.log(" ignored: " + needle + " (len of docs: " + docs.length + "), from=" + from + " to=" + to + " pos=" + pos);
 
                     let jj = 0;
-                    for (jj = 0; jj < Object.keys(docs).length; jj++) {
+                    for (jj = 0; jj < docs.length; jj++) {
                         let doc = docs[jj];
-                        if (doc.filename == queryInput.images[k]) {
+                        if (doc.filename == needle) {
                             console.log(doc.filename + " found at position " + jj);
                             break;
-                        } else {
-    
                         }
                     }
                 }
