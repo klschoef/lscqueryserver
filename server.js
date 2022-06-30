@@ -621,7 +621,23 @@ function filterQuery(queryInput, db, res) {
     
     db.collection(collection).find(query).limit(limit).sort({time: 1}).toArray().then((docs) => {
         console.log(Object.keys(docs).length + " elements");
-        res.json(docs);
+        let docsReranked = [];
+        if (keys.includes("images") && Array.isArray(queryInput.images)) {
+            let k=0;
+            let j=0;
+            for (k=0; k < queryInput.images.length; k++) {
+                for (j=0; j < Object.keys(docs).length; j++) {
+                    let doc = docs[j];
+                    if (doc.filename == queryInput.images[k]) {
+                        docsReranked.push(doc);
+                        break;
+                    }
+                }
+            }
+            res.json(docsReranked);
+        } else {
+            res.json(docs);
+        }
     }).catch((err) => {
         res.send({ error: err });
         console.log(err);
