@@ -634,7 +634,7 @@ function filterQuery(queryInput, db, res) {
                 let pos = -1;
 
                 while (from <= to) {
-                    let m = (from + to)/2;
+                    let m = parseInt((from + to)/2);
                     console.log(m + " ");
                     let filename = docs[m].filename;
                     if (needle == filename) {
