@@ -619,21 +619,50 @@ function filterQuery(queryInput, db, res) {
     console.log("--------------------------------- (" + limit + ")");
 
     
-    db.collection(collection).find(query).limit(limit).sort({time: 1}).toArray().then((docs) => {
+    db.collection(collection).find(query).limit(limit).sort({filename: 1}).toArray().then((docs) => {
         console.log(Object.keys(docs).length + " elements");
         let docsReranked = [];
         if (keys.includes("images") && Array.isArray(queryInput.images)) {
             let k=0;
             let j=0;
-            for (k=0; k < queryInput.images.length; k++) {
-                for (j=0; j < Object.keys(docs).length; j++) {
+            let needle = queryInput.images[k];
+
+            //binary search for needle
+            for (k=0; k < queryInput.images.length; k++) {    
+                let from = 0;
+                let to = Object.keys(docs).length-1;
+                let pos = -1;
+                
+                while (from <= to) {
+                    m = (from + to)/2;
+                    let filename = docs[m].filename;
+                    if (needle == filename) {
+                        pos = m;
+                        break;
+                    } else {
+                        if (needle < filename) {
+                            to = m - 1;
+                        } else {
+                            from = m + 1;
+                        }
+                    }
+                }
+
+                docsReranked.push(docs[pos]);
+                docs.splice(pos,1);
+
+                /*
+                for (j = from; j < Object.keys(docs).length; j++) {
                     let doc = docs[j];
                     if (doc.filename == queryInput.images[k]) {
                         docsReranked.push(doc);
                         docs.splice(j,1);
                         break;
+                    } else {
+
                     }
                 }
+                */
             }
             res.json(docsReranked);
         } else {
