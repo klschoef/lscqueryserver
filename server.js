@@ -636,7 +636,7 @@ function filterQuery(queryInput, db, res) {
                 while (from <= to) {
                     let m = parseInt((from + to)/2);
                     let filename = docs[m].filename;
-                    if (needle == filename) {
+                    if (needle === filename) {
                         pos = m;
                         break;
                     } else {
@@ -657,7 +657,7 @@ function filterQuery(queryInput, db, res) {
                     let jj = 0;
                     for (jj = 0; jj < docs.length; jj++) {
                         let doc = docs[jj];
-                        if (doc.filename == needle) {
+                        if (doc.filename === needle) {
                             console.log(doc.filename + " found at position " + jj);
                             break;
                         }
