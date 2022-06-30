@@ -653,6 +653,17 @@ function filterQuery(queryInput, db, res) {
                     docs.splice(pos,1);
                 } else {
                     console.log(" ignored: " + needle + " (len of docs: " + docs.length + "), from=" + from + " to=" + to + " pos=" + pos);
+
+                    let jj = 0;
+                    for (jj = 0; jj < Object.keys(docs).length; jj++) {
+                        let doc = docs[jj];
+                        if (doc.filename == queryInput.images[k]) {
+                            console.log(doc.filename + " found at position " + jj);
+                            break;
+                        } else {
+    
+                        }
+                    }
                 }
 
                 /*
