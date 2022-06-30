@@ -621,9 +621,6 @@ function filterQuery(queryInput, db, res) {
     
     db.collection(collection).find(query).limit(limit).sort({filename: 1}).toArray().then((docs) => {
         console.log(docs.length + " elements");
-        if (Array.isArray(queryInput.images)) {
-            console.log("We searched for " + queryInput.images.length + " images!");
-        }
         let docsReranked = [];
         if (keys.includes("images") && Array.isArray(queryInput.images)) {
             let k=0;
@@ -653,18 +650,9 @@ function filterQuery(queryInput, db, res) {
 
                 if (pos != -1 && docs[pos] != null) {
                     docsReranked.push(docs[pos]);
-                    //docs.splice(pos,1);
+                    docs.splice(pos,1);
                 } else {
                     console.log(" ignored: " + needle + " (len of docs: " + docs.length + "), from=" + from + " to=" + to + " pos=" + pos);
-
-                    let jj = 0;
-                    for (jj = 0; jj < docs.length; jj++) {
-                        let doc = docs[jj];
-                        if (doc.filename === needle) {
-                            console.log(doc.filename + " found at position " + jj);
-                            break;
-                        }
-                    }
                 }
 
                 /*
