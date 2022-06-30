@@ -630,6 +630,7 @@ function filterQuery(queryInput, db, res) {
                     let doc = docs[j];
                     if (doc.filename == queryInput.images[k]) {
                         docsReranked.push(doc);
+                        docs.splice(j,1);
                         break;
                     }
                 }
