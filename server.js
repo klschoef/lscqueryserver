@@ -2,36 +2,70 @@ const WebSocket = require('ws');
 const cors = require('cors');
 
 const wss = new WebSocket.Server({ noServer: true });
+const clipWebSocket = new WebSocket('ws://extreme00.itec.aau.at:8001');
 
 // Variables to store the parameter values
 let text, concept, object;
 
+//////////////////////////////////////////////////////////////////
+// Connection to client
+//////////////////////////////////////////////////////////////////
+const port = 8080
+const server = app.listen(port, () => {
+    console.log('WebSocket server is running on port ' + port);
+});
+
+//const server = http.createServer(app);
+server.on('upgrade', (request, socket, head) => {
+    //console.log('connection upgrade');
+    wss.handleUpgrade(request, socket, head, (ws) => {
+        //console.log('handle connection upgrade');
+        wss.emit('connection', ws, request);
+    });
+});
+
+
+let clientWS;
+wss.on('connection', (ws) => {
+    console.log('client connected');
+    // WebSocket connection handling logic
+    clientWS = ws;
+
+    ws.on('message', (message) => {
+        console.log('received: %s', message);
+        // Handle the received message as needed
+        msg = JSON.parse(message);
+        nodequery = msg.content.query;
+        clipQuery = parseParameters(msg.content.query)
+        console.log('clipQuery: %s', clipQuery);
+    });
+    
+    ws.on('close', function close() {
+        console.log('client disconnected');
+    });
+});
+
+
+//////////////////////////////////////////////////////////////////
+// Connection to CLIP server
+//////////////////////////////////////////////////////////////////
+
+clipWebSocket.on('open', () => {
+    console.log('connected to CLIP server');
+})
+
+clipWebSocket.on('message', (message) => {
+    console.log('received message from CLIP server: %s', message);
+    
+})
+
+
+//////////////////////////////////////////////////////////////////
 const http = require('http');
 const express = require('express');
 const app = express();
-app.use(cors());  
+app.use(cors());  // Enable CORS for all routes
 
-const server = http.createServer(app);
-server.on('upgrade', (request, socket, head) => {
-    wss.handleUpgrade(request, socket, head, (ws) => {
-      wss.emit('connection', ws, request);
-    });
-  });
-
-  wss.on('connection', (ws) => {
-    // WebSocket connection handling logic
-  });
-
-  wss.on('message', (ws) => {
-    console.log('received: %s', message);
-    // Handle the received message as needed
-
-    clipQuery = parseParameters(message)
-  });
-
-  ws.on('close', function close() {
-    console.log('disconnected');
-  });
 
 
 function parseParameters(inputString) {
