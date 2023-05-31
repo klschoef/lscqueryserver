@@ -1,4 +1,71 @@
-const mongo = require("mongodb");
+
+const WebSocket = require('ws');
+
+const wss = new WebSocket.Server({ port: 8080 });
+
+
+// Variables to store the parameter values
+let text, concept, object;
+
+
+// Event handler for connection event
+wss.on('connection', function connection(ws) {
+
+  console.log('incoming connection');
+
+  // Event handler for receiving messages
+  ws.on('message', function incoming(message) {
+    console.log('received: %s', message);
+    // Handle the received message as needed
+
+    clipQuery = parseParameters(message)
+
+
+
+  });
+
+  // Event handler for connection close
+  ws.on('close', function close() {
+    console.log('disconnected');
+  });
+
+  // Send a message to the connected client
+  //ws.send('Hello, client!');
+});
+
+function parseParameters(inputString) {
+    // Define the regex pattern to match parameters and their values
+    const regex = /-([a-zA-Z])\s(\S+)/g;
+
+
+
+    // Iterate over matches
+    let match;
+    while ((match = regex.exec(inputString))) {
+        const [, parameter, value] = match; // Destructure the matched values
+
+        // Assign the value to the corresponding variable
+        switch (parameter) {
+            case 't':
+                text = value;
+                break;
+            case 'c':
+                concept = value;
+                break;
+            case 'o':
+                object = value;
+                break;
+                // Add more cases for additional parameters if needed
+        }
+    }
+
+    // Extract and remove the matched parameters from the input string
+    const updatedString = inputString.replace(regex, '');
+
+    return updatedString;
+} 
+
+/*const mongo = require("mongodb");
 const express = require("express");
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -137,13 +204,6 @@ MongoClient.connect(url, {useNewUrlParser: true}, (err, client) => {
         console.log("LSC database server listenting at " + url + ":" + port);
     })
     
-    /*db.collection('images').find({}).toArray().then((docs) => {
-        console.log(docs);
-    }).catch((err) => {
-        console.log(err);
-    }).finally(() => {
-        client.close();
-    });*/
 });
 
 
@@ -651,9 +711,7 @@ function filterQuery(queryInput, db, res) {
                 if (pos != -1 && docs[pos] != null) {
                     docsReranked.push(docs[pos]);
                     docs.splice(pos,1);
-                } /*else {
-                    console.log(" ignored: " + needle + " (len of docs: " + docs.length + "), from=" + from + " to=" + to + " pos=" + pos);
-                }*/
+                } 
 
             }
             res.json(docsReranked);
@@ -687,3 +745,4 @@ function filterImage(queryInput, db, res) {
         console.log(err);
     });
 }
+*/
