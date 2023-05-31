@@ -1,37 +1,38 @@
-
 const WebSocket = require('ws');
+const cors = require('cors');
 
-const wss = new WebSocket.Server({ port: 8080 });
-
+const wss = new WebSocket.Server({ noServer: true });
 
 // Variables to store the parameter values
 let text, concept, object;
 
+const http = require('http');
+const express = require('express');
+const app = express();
+app.use(cors());  
 
-// Event handler for connection event
-wss.on('connection', function connection(ws) {
+const server = http.createServer(app);
+server.on('upgrade', (request, socket, head) => {
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.emit('connection', ws, request);
+    });
+  });
 
-  console.log('incoming connection');
+  wss.on('connection', (ws) => {
+    // WebSocket connection handling logic
+  });
 
-  // Event handler for receiving messages
-  ws.on('message', function incoming(message) {
+  wss.on('message', (ws) => {
     console.log('received: %s', message);
     // Handle the received message as needed
 
     clipQuery = parseParameters(message)
-
-
-
   });
 
-  // Event handler for connection close
   ws.on('close', function close() {
     console.log('disconnected');
   });
 
-  // Send a message to the connected client
-  //ws.send('Hello, client!');
-});
 
 function parseParameters(inputString) {
     // Define the regex pattern to match parameters and their values
