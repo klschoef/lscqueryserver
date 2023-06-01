@@ -3,6 +3,10 @@ const cors = require('cors');
 
 const wss = new WebSocket.Server({ noServer: true });
 const clipWebSocket = new WebSocket('ws://extreme00.itec.aau.at:8002');
+const mongouri = 'mongodb://extreme00.itec.aau.at:27017'; // Replace with your MongoDB connection string
+
+const MongoClient = require('mongodb').MongoClient;
+const mongoclient = new MongoClient(mongouri);
 
 // Variables to store the parameter values
 let text, concept, object;
@@ -35,6 +39,9 @@ wss.on('connection', (ws) => {
     // WebSocket connection handling logic
     clientWS = ws;
 
+    //connect to mongo
+    mongoclient.connect();
+
     ws.on('message', (message) => {
         console.log('received: %s', message);
         // Handle the received message as needed
@@ -49,6 +56,8 @@ wss.on('connection', (ws) => {
     
     ws.on('close', function close() {
         console.log('client disconnected');
+        // Close the MongoDB connection when finished
+        mongoclient.close();
     });
 });
 
@@ -70,13 +79,13 @@ clipWebSocket.on('message', (message) => {
 
 
 
-
+//////////////////////////////////////////////////////////////////
+// Parameter Parsing
+//////////////////////////////////////////////////////////////////
 
 function parseParameters(inputString) {
     // Define the regex pattern to match parameters and their values
     const regex = /-([a-zA-Z])\s(\S+)/g;
-
-
 
     // Iterate over matches
     let match;
@@ -94,6 +103,12 @@ function parseParameters(inputString) {
             case 'o':
                 object = value;
                 break;
+            case 'y':
+                year = value;
+                console.log('querying for year %s', year);
+                // Call the function to execute the query
+                queryDocumentsByYear(year).catch(console.error);
+                break;
                 // Add more cases for additional parameters if needed
         }
     }
@@ -103,6 +118,37 @@ function parseParameters(inputString) {
 
     return updatedString;
 } 
+
+
+//////////////////////////////////////////////////////////////////
+// MongoDB Queries
+//////////////////////////////////////////////////////////////////
+
+async function queryDocumentsByYear(yearValue) {
+  try {
+    const database = mongoclient.db('lsc'); // Replace with your database name
+    const collection = database.collection('images'); // Replace with your collection name
+
+    const query = { year: parseInt(yearValue) }; // Replace with the desired year
+
+    console.log('mongodb query: %s', JSON.stringify(query));
+    const cursor = collection.find(query);
+    const count = await cursor.count();
+    console.log('%d results', count);
+    await cursor.forEach(document => {
+      // Access the filename field in each document
+      const filename = document.filename;
+      console.log(filename);
+    });
+  } finally {
+    // Close the MongoDB connection when finished
+    //await mongoclient.close();
+  }
+}
+
+
+
+
 
 /*const mongo = require("mongodb");
 const express = require("express");
