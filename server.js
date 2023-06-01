@@ -2,7 +2,7 @@ const WebSocket = require('ws');
 const cors = require('cors');
 
 const wss = new WebSocket.Server({ noServer: true });
-const clipWebSocket = new WebSocket('ws://extreme00.itec.aau.at:8001');
+const clipWebSocket = new WebSocket('ws://extreme00.itec.aau.at:8002');
 
 // Variables to store the parameter values
 let text, concept, object;
@@ -10,6 +10,10 @@ let text, concept, object;
 //////////////////////////////////////////////////////////////////
 // Connection to client
 //////////////////////////////////////////////////////////////////
+const http = require('http');
+const express = require('express');
+const app = express();
+app.use(cors());  // Enable CORS for all routes
 const port = 8080
 const server = app.listen(port, () => {
     console.log('WebSocket server is running on port ' + port);
@@ -38,6 +42,9 @@ wss.on('connection', (ws) => {
         nodequery = msg.content.query;
         clipQuery = parseParameters(msg.content.query)
         console.log('clipQuery: %s', clipQuery);
+
+        msg.content.query = clipQuery
+        clipWebSocket.send(JSON.stringify(msg))
     });
     
     ws.on('close', function close() {
@@ -55,16 +62,13 @@ clipWebSocket.on('open', () => {
 })
 
 clipWebSocket.on('message', (message) => {
-    console.log('received message from CLIP server: %s', message);
-    
+    //console.log('received message from CLIP server: %s', message);
+    msg = JSON.parse(message);
+    console.log('forwaring %d results', msg.totalresults);
+    clientWS.send(JSON.stringify(msg));
 })
 
 
-//////////////////////////////////////////////////////////////////
-const http = require('http');
-const express = require('express');
-const app = express();
-app.use(cors());  // Enable CORS for all routes
 
 
 
