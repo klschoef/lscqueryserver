@@ -9,7 +9,7 @@ const MongoClient = require('mongodb').MongoClient;
 const mongoclient = new MongoClient(mongouri);
 
 // Variables to store the parameter values
-let text, concept, object;
+let text, concept, object, year, month, day, weekday;
 
 //////////////////////////////////////////////////////////////////
 // Connection to client
@@ -34,6 +34,7 @@ server.on('upgrade', (request, socket, head) => {
 
 
 let clientWS;
+let mongoDBResults = {};
 wss.on('connection', (ws) => {
     console.log('client connected');
     // WebSocket connection handling logic
@@ -48,10 +49,27 @@ wss.on('connection', (ws) => {
         msg = JSON.parse(message);
         nodequery = msg.content.query;
         clipQuery = parseParameters(msg.content.query)
-        console.log('clipQuery: %s', clipQuery);
+        console.log('clipQuery: %s len=%d', clipQuery, clipQuery.length);
+        
+        if (clipQuery.length > 0) {
+            if (clipQuery.length !== msg.content.query.length) {
+                msg.content.resultsperpage = msg.content.maxresults;
+                //console.log('--> %d/%d - ', msg.content.maxresults, msg.content.resultsperpage, JSON.stringify(msg));
+            }
 
-        msg.content.query = clipQuery
-        clipWebSocket.send(JSON.stringify(msg))
+            msg.content.query = clipQuery
+            clipWebSocket.send(JSON.stringify(msg))
+        } else {
+            mongoDBResults = {}
+            queryImages(year, month, day, weekday).then(() => {
+                console.log("query finished");
+                if ("results" in mongoDBResults) {
+                    console.log('sending %d results to client', mongoDBResults.results.length);
+                    console.log(JSON.stringify(mongoDBResults));
+                    clientWS.send(JSON.stringify(mongoDBResults));
+                }
+            });
+        }
     });
     
     ws.on('close', function close() {
@@ -70,10 +88,53 @@ clipWebSocket.on('open', () => {
     console.log('connected to CLIP server');
 })
 
+const weekdays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
 clipWebSocket.on('message', (message) => {
-    //console.log('received message from CLIP server: %s', message);
+    
     msg = JSON.parse(message);
-    console.log('forwaring %d results', msg.totalresults);
+    numbefore = msg.results.length;
+
+    let ly = year.toString().trim().length;
+    let lm = month.toString().trim().length;
+    let ld = day.toString().trim().length;
+    let lw = weekday.toString().trim().length;
+
+    if (ly > 0 || lm > 0 || ld > 0 || lw > 0) {
+        for (let i = 0; i < msg.results.length; i++) {
+            const elem = msg.results[i];
+            let eyear = elem.substring(0,4);
+            let emonth = elem.substring(4,6);
+            let eday = elem.substring(7,9);
+
+            if (ly > 0 && eyear !== year) {
+                msg.results.splice(i--, 1);
+            }
+            else if (lm > 0 && emonth !== month) {
+                msg.results.splice(i--, 1);
+            }
+            else if (ld > 0 && eday !== day) {
+                msg.results.splice(i--, 1);
+            }
+            else if (lw > 0) {
+                let dstr = eyear + '-' + emonth + '-' + eday;
+                let edate = new Date(dstr);
+                let wd = edate.getDay();
+                
+                if (weekdays[wd] === weekday) {
+                    msg.results.splice(i--, 1);
+                }
+            }
+        }
+    }
+    
+    numafter = msg.results.length;
+    if (numafter !== numbefore) {
+        msg.totalresults = msg.results.length;
+        msg.num = msg.results.length;
+    }
+    console.log('forwarding %d results (current before=%d after=%d)', msg.totalresults, numbefore, numafter);
+    console.log(JSON.stringify(msg));
     clientWS.send(JSON.stringify(msg));
 })
 
@@ -85,7 +146,9 @@ clipWebSocket.on('message', (message) => {
 
 function parseParameters(inputString) {
     // Define the regex pattern to match parameters and their values
-    const regex = /-([a-zA-Z])\s(\S+)/g;
+    const regex = /-([a-zA-Z]+)\s(\S+)/g;
+    
+    text = concept = object = year = month = day = weekday = '';
 
     // Iterate over matches
     let match;
@@ -103,18 +166,29 @@ function parseParameters(inputString) {
             case 'o':
                 object = value;
                 break;
+            case 'wd':
+                weekday = value;
+                break;
+            case 'd':
+                day = value;
+                break;
+            case 'm':
+                month = value;
+                break;
             case 'y':
                 year = value;
                 console.log('querying for year %s', year);
                 // Call the function to execute the query
-                queryDocumentsByYear(year).catch(console.error);
+                //queryDocumentsByYear(year).catch(console.error);
                 break;
                 // Add more cases for additional parameters if needed
         }
     }
 
+    console.log('filters: text=%s concept=%s object=%s weekday=%s day=%s month=%s year=%s', text, concept, object, weekday, day, month, year);
+
     // Extract and remove the matched parameters from the input string
-    const updatedString = inputString.replace(regex, '');
+    const updatedString = inputString.replace(regex, '').trim();
 
     return updatedString;
 } 
@@ -124,22 +198,50 @@ function parseParameters(inputString) {
 // MongoDB Queries
 //////////////////////////////////////////////////////////////////
 
-async function queryDocumentsByYear(yearValue) {
+async function queryImages(yearValue, monthValue, dayValue, weekdayValue) {
   try {
     const database = mongoclient.db('lsc'); // Replace with your database name
     const collection = database.collection('images'); // Replace with your collection name
 
-    const query = { year: parseInt(yearValue) }; // Replace with the desired year
+    let query = {  }; 
+
+    if (yearValue.toString().trim().length > 0) {
+        query.year = parseInt(yearValue);
+    }
+
+    if (monthValue.toString().trim().length > 0) {
+        query.month = parseInt(monthValue);
+    }
+
+    if (dayValue.toString().trim().length > 0) {
+        query.day = parseInt(monthValue);
+    }
+
+    if (weekdayValue.toString().trim().length > 0) {
+        query.weekday = weekdayValue;
+    }
+
+    const projection = { filepath: 1};
+
+    const sortCriteria = { minute_id: 1 }; //-1 for desc
 
     console.log('mongodb query: %s', JSON.stringify(query));
-    const cursor = collection.find(query);
+    const cursor = collection.find(query, projection); //use sort(sortCriteria); //will give an array
     const count = await cursor.count();
     console.log('%d results', count);
+
+    mongoDBResults = { "num": count, "totalresults": count };
+    let results = [];
+
     await cursor.forEach(document => {
       // Access the filename field in each document
-      const filename = document.filename;
-      console.log(filename);
+      const filename = document.filepath;
+      results.push(filename);
+      //console.log(filename);
     });
+
+    mongoDBResults.results = results;
+
   } finally {
     // Close the MongoDB connection when finished
     //await mongoclient.close();
