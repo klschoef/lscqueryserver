@@ -47,21 +47,33 @@ wss.on('connection', (ws) => {
         console.log('received: %s', message);
         // Handle the received message as needed
         msg = JSON.parse(message);
-        nodequery = msg.content.query;
-        clipQuery = parseParameters(msg.content.query)
-        console.log('clipQuery: %s len=%d', clipQuery, clipQuery.length);
-        
-        if (clipQuery.length > 0) {
-            if (clipQuery.length !== msg.content.query.length) {
-                msg.content.resultsperpage = msg.content.maxresults;
-                //console.log('--> %d/%d - ', msg.content.maxresults, msg.content.resultsperpage, JSON.stringify(msg));
-            }
+        if (msg.content.type === 'textquery') {
+            nodequery = msg.content.query;
+            clipQuery = parseParameters(msg.content.query)
+            console.log('clipQuery: %s len=%d', clipQuery, clipQuery.length);
+            
+            if (clipQuery.length > 0) {
+                if (clipQuery.length !== msg.content.query.length) {
+                    msg.content.resultsperpage = msg.content.maxresults;
+                    //console.log('--> %d/%d - ', msg.content.maxresults, msg.content.resultsperpage, JSON.stringify(msg));
+                }
 
-            msg.content.query = clipQuery
-            clipWebSocket.send(JSON.stringify(msg))
-        } else {
+                msg.content.query = clipQuery
+                clipWebSocket.send(JSON.stringify(msg))
+            } else {
+                mongoDBResults = {}
+                queryImages(year, month, day, weekday).then(() => {
+                    console.log("query finished");
+                    if ("results" in mongoDBResults) {
+                        console.log('sending %d results to client', mongoDBResults.results.length);
+                        console.log(JSON.stringify(mongoDBResults));
+                        clientWS.send(JSON.stringify(mongoDBResults));
+                    }
+                });
+            }
+        } else if (msg.content.type === 'metadataquery') {
             mongoDBResults = {}
-            queryImages(year, month, day, weekday).then(() => {
+            queryImage(msg.content.imagepath).then(() => {
                 console.log("query finished");
                 if ("results" in mongoDBResults) {
                     console.log('sending %d results to client', mongoDBResults.results.length);
@@ -244,9 +256,36 @@ async function queryImages(yearValue, monthValue, dayValue, weekdayValue) {
 
   } finally {
     // Close the MongoDB connection when finished
-    //await mongoclient.close();
+    await mongoclient.close();
   }
 }
+
+async function queryImage(url) {
+    try {
+      const database = mongoclient.db('lsc'); // Replace with your database name
+      const collection = database.collection('images'); // Replace with your collection name
+  
+      let query = { "filepath": url }; 
+  
+      console.log('mongodb query: %s', JSON.stringify(query));
+      const cursor = collection.find(query);
+  
+      mongoDBResults = { "type": "metadata", "num": 1, "totalresults": 1 };
+      let results = [];
+  
+      await cursor.forEach(document => {
+        // Access the filename field in each document
+        results.push(document);
+        //console.log(filename);
+      });
+  
+      mongoDBResults.results = results;
+  
+    } finally {
+      // Close the MongoDB connection when finished
+      await mongoclient.close();
+    }
+  }
 
 
 
