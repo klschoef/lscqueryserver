@@ -49,7 +49,16 @@ wss.on('connection', (ws) => {
     }
 
     //connect to mongo
-    mongoclient.connect();
+    mongoclient.connect((err) => {
+        if (err) {
+            console.error('error connecting to mongodb: ', err);
+            return;
+        }
+    });
+
+    mongoclient.on('close', () => {
+        console.log('mongodb connection closed');
+    });
 
     ws.on('message', (message) => {
         console.log('received from client: %s', message);
@@ -262,78 +271,89 @@ function parseParameters(inputString) {
 
 async function queryImages(yearValue, monthValue, dayValue, weekdayValue) {
   try {
-    const database = mongoclient.db('lsc'); // Replace with your database name
-    const collection = database.collection('images'); // Replace with your collection name
+    if (!mongoclient.isConnected()) {
+        console.log('mongodb not connected!');
+    } else {
+        const database = mongoclient.db('lsc'); // Replace with your database name
+        const collection = database.collection('images'); // Replace with your collection name
 
-    let query = {  }; 
+        let query = {  }; 
 
-    if (yearValue.toString().trim().length > 0) {
-        query.year = parseInt(yearValue);
+        if (yearValue.toString().trim().length > 0) {
+            query.year = parseInt(yearValue);
+        }
+
+        if (monthValue.toString().trim().length > 0) {
+            query.month = parseInt(monthValue);
+        }
+
+        if (dayValue.toString().trim().length > 0) {
+            query.day = parseInt(monthValue);
+        }
+
+        if (weekdayValue.toString().trim().length > 0) {
+            query.weekday = weekdayValue;
+        }
+
+        const projection = { filepath: 1};
+
+        const sortCriteria = { minute_id: 1 }; //-1 for desc
+
+        console.log('mongodb query: %s', JSON.stringify(query));
+        const cursor = collection.find(query, projection); //use sort(sortCriteria); //will give an array
+        const count = await cursor.count();
+        console.log('%d results', count);
+
+        mongoDBResults = { "num": count, "totalresults": count };
+        let results = [];
+
+        await cursor.forEach(document => {
+        // Access the filename field in each document
+        const filename = document.filepath;
+        results.push(filename);
+        //console.log(filename);
+        });
+
+        mongoDBResults.results = results;
     }
-
-    if (monthValue.toString().trim().length > 0) {
-        query.month = parseInt(monthValue);
-    }
-
-    if (dayValue.toString().trim().length > 0) {
-        query.day = parseInt(monthValue);
-    }
-
-    if (weekdayValue.toString().trim().length > 0) {
-        query.weekday = weekdayValue;
-    }
-
-    const projection = { filepath: 1};
-
-    const sortCriteria = { minute_id: 1 }; //-1 for desc
-
-    console.log('mongodb query: %s', JSON.stringify(query));
-    const cursor = collection.find(query, projection); //use sort(sortCriteria); //will give an array
-    const count = await cursor.count();
-    console.log('%d results', count);
-
-    mongoDBResults = { "num": count, "totalresults": count };
-    let results = [];
-
-    await cursor.forEach(document => {
-      // Access the filename field in each document
-      const filename = document.filepath;
-      results.push(filename);
-      //console.log(filename);
-    });
-
-    mongoDBResults.results = results;
-
+  } catch (error) {
+    console.log("error with mongodb: " + error);
   } finally {
     // Close the MongoDB connection when finished
-    await mongoclient.close();
+    //await mongoclient.close();
   }
 }
 
 async function queryImage(url) {
     try {
-      const database = mongoclient.db('lsc'); // Replace with your database name
-      const collection = database.collection('images'); // Replace with your collection name
+        if (!mongoclient.isConnected()) {
+            console.log('mongodb not connected!');
+        } else {
+            const database = mongoclient.db('lsc'); // Replace with your database name
+            const collection = database.collection('images'); // Replace with your collection name
+        
+            let query = { "filepath": url }; 
+        
+            console.log('mongodb query: %s', JSON.stringify(query));
+            const cursor = collection.find(query);
+        
+            mongoDBResults = { "type": "metadata", "num": 1, "totalresults": 1 };
+            let results = [];
+        
+            await cursor.forEach(document => {
+                // Access the filename field in each document
+                results.push(document);
+                //console.log(filename);
+            });
+        
+            mongoDBResults.results = results;
+        }
   
-      let query = { "filepath": url }; 
-  
-      console.log('mongodb query: %s', JSON.stringify(query));
-      const cursor = collection.find(query);
-  
-      mongoDBResults = { "type": "metadata", "num": 1, "totalresults": 1 };
-      let results = [];
-  
-      await cursor.forEach(document => {
-        // Access the filename field in each document
-        results.push(document);
-        //console.log(filename);
-      });
-  
-      mongoDBResults.results = results;
-  
+    } catch (error) {
+        console.log("error with mongodb: " + error);
     } finally {
       // Close the MongoDB connection when finished
-      await mongoclient.close();
+      //await mongoclient.close();
     }
   }
 
