@@ -1,9 +1,10 @@
 const WebSocket = require('ws');
 const cors = require('cors');
 
+const CLIPSERVERURL = 'ws://extreme00.itec.aau.at:8002';
 const wss = new WebSocket.Server({ noServer: true });
-const clipWebSocket = new WebSocket('ws://extreme00.itec.aau.at:8002');
-const pingInterval = 60000; // Send ping every 60 seconds
+let clipWebSocket = null;
+
 const mongouri = 'mongodb://extreme00.itec.aau.at:27017'; // Replace with your MongoDB connection string
 
 const MongoClient = require('mongodb').MongoClient;
@@ -41,29 +42,52 @@ wss.on('connection', (ws) => {
     // WebSocket connection handling logic
     clientWS = ws;
 
+    //check CLIPserver connection
+    if (clipWebSocket === null) {
+        console.log('clipWebSocket is null, try to re-connect');
+        connectToCLIPServer();
+    }
+
     //connect to mongo
     mongoclient.connect();
 
     ws.on('message', (message) => {
-        console.log('received: %s', message);
+        console.log('received from client: %s', message);
         // Handle the received message as needed
-        msg = JSON.parse(message);
-        if (msg.content.type === 'textquery') {
-            nodequery = msg.content.query;
-            clipQuery = parseParameters(msg.content.query)
-            console.log('clipQuery: %s len=%d', clipQuery, clipQuery.length);
-            
-            if (clipQuery.length > 0) {
-                if (clipQuery.length !== msg.content.query.length) {
-                    msg.content.resultsperpage = msg.content.maxresults;
-                    //console.log('--> %d/%d - ', msg.content.maxresults, msg.content.resultsperpage, JSON.stringify(msg));
-                }
 
-                msg.content.query = clipQuery
-                clipWebSocket.send(JSON.stringify(msg))
-            } else {
+        //check CLIPserver connection
+        if (clipWebSocket === null) {
+            console.log('clipWebSocket is null');
+        } else {
+
+            msg = JSON.parse(message);
+            if (msg.content.type === 'textquery') {
+                nodequery = msg.content.query;
+                clipQuery = parseParameters(msg.content.query)
+                console.log('clipQuery: %s len=%d', clipQuery, clipQuery.length);
+                
+                if (clipQuery.length > 0) {
+                    if (clipQuery.length !== msg.content.query.length) {
+                        msg.content.resultsperpage = msg.content.maxresults;
+                        //console.log('--> %d/%d - ', msg.content.maxresults, msg.content.resultsperpage, JSON.stringify(msg));
+                    }
+
+                    msg.content.query = clipQuery
+                    clipWebSocket.send(JSON.stringify(msg))
+                } else {
+                    mongoDBResults = {}
+                    queryImages(year, month, day, weekday).then(() => {
+                        console.log("query finished");
+                        if ("results" in mongoDBResults) {
+                            console.log('sending %d results to client', mongoDBResults.results.length);
+                            console.log(JSON.stringify(mongoDBResults));
+                            clientWS.send(JSON.stringify(mongoDBResults));
+                        }
+                    });
+                }
+            } else if (msg.content.type === 'metadataquery') {
                 mongoDBResults = {}
-                queryImages(year, month, day, weekday).then(() => {
+                queryImage(msg.content.imagepath).then(() => {
                     console.log("query finished");
                     if ("results" in mongoDBResults) {
                         console.log('sending %d results to client', mongoDBResults.results.length);
@@ -72,16 +96,6 @@ wss.on('connection', (ws) => {
                     }
                 });
             }
-        } else if (msg.content.type === 'metadataquery') {
-            mongoDBResults = {}
-            queryImage(msg.content.imagepath).then(() => {
-                console.log("query finished");
-                if ("results" in mongoDBResults) {
-                    console.log('sending %d results to client', mongoDBResults.results.length);
-                    console.log(JSON.stringify(mongoDBResults));
-                    clientWS.send(JSON.stringify(mongoDBResults));
-                }
-            });
         }
     });
     
@@ -96,72 +110,95 @@ wss.on('connection', (ws) => {
 //////////////////////////////////////////////////////////////////
 // Connection to CLIP server
 //////////////////////////////////////////////////////////////////
+function connectToCLIPServer() {
+    try {
+        console.log('trying to connect to CLIP...');
+        clipWebSocket = new WebSocket(CLIPSERVERURL);
+        console.log('after connection trial')
 
-clipWebSocket.on('open', () => {
-    console.log('connected to CLIP server');
-
-    // Start sending ping messages at the specified interval
-    setInterval(() => {
-        if (clipWebSocket.readyState === WebSocket.OPEN) {
-            clipWebSocket.send('ping');
-        }
-    }, pingInterval);
-})
-
-clipWebSocket.on('close', (event) => {
-    // Handle connection closed
-    console.log('Connection to CLIP closed', event.code, event.reason);
-});
-
-const weekdays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-
-clipWebSocket.on('message', (message) => {
-    
-    msg = JSON.parse(message);
-    numbefore = msg.results.length;
-
-    let ly = year.toString().trim().length;
-    let lm = month.toString().trim().length;
-    let ld = day.toString().trim().length;
-    let lw = weekday.toString().trim().length;
-
-    if (ly > 0 || lm > 0 || ld > 0 || lw > 0) {
-        for (let i = 0; i < msg.results.length; i++) {
-            const elem = msg.results[i];
-            let eyear = elem.substring(0,4);
-            let emonth = elem.substring(4,6);
-            let eday = elem.substring(7,9);
-
-            if (ly > 0 && eyear !== year) {
-                msg.results.splice(i--, 1);
-            }
-            else if (lm > 0 && emonth !== month) {
-                msg.results.splice(i--, 1);
-            }
-            else if (ld > 0 && eday !== day) {
-                msg.results.splice(i--, 1);
-            }
-            else if (lw > 0) {
-                let dstr = eyear + '-' + emonth + '-' + eday;
-                let edate = new Date(dstr);
-                let wd = edate.getDay();
-                
-                if (weekdays[wd] === weekday) {
-                    msg.results.splice(i--, 1);
+        clipWebSocket.on('open', () => {
+            console.log('connected to CLIP server');
+        
+            // Start sending ping messages at the specified interval
+            /*setInterval(() => {
+                if (clipWebSocket.readyState === WebSocket.OPEN) {
+                    let ping = { "content": {"ping":true} }
+                    clipWebSocket.send(JSON.stringify(ping));
+                }
+            }, pingInterval);
+            */
+        })
+        
+        clipWebSocket.on('close', (event) => {
+            // Handle connection closed
+            clipWebSocket.close();
+            clipWebSocket = null;
+            console.log('Connection to CLIP closed', event.code, event.reason);
+        });
+        
+        const weekdays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        
+        clipWebSocket.on('message', (message) => {
+            
+            console.log('received from CLIP server: ' + message);
+        
+            msg = JSON.parse(message);
+            numbefore = msg.results.length;
+        
+            let ly = year.toString().trim().length;
+            let lm = month.toString().trim().length;
+            let ld = day.toString().trim().length;
+            let lw = weekday.toString().trim().length;
+        
+            if (ly > 0 || lm > 0 || ld > 0 || lw > 0) {
+                for (let i = 0; i < msg.results.length; i++) {
+                    const elem = msg.results[i];
+                    let eyear = elem.substring(0,4);
+                    let emonth = elem.substring(4,6);
+                    let eday = elem.substring(7,9);
+        
+                    if (ly > 0 && eyear !== year) {
+                        msg.results.splice(i--, 1);
+                    }
+                    else if (lm > 0 && emonth !== month) {
+                        msg.results.splice(i--, 1);
+                    }
+                    else if (ld > 0 && eday !== day) {
+                        msg.results.splice(i--, 1);
+                    }
+                    else if (lw > 0) {
+                        let dstr = eyear + '-' + emonth + '-' + eday;
+                        let edate = new Date(dstr);
+                        let wd = edate.getDay();
+                        
+                        if (weekdays[wd] === weekday) {
+                            msg.results.splice(i--, 1);
+                        }
+                    }
                 }
             }
-        }
+            
+            numafter = msg.results.length;
+            if (numafter !== numbefore) {
+                msg.totalresults = msg.results.length;
+                msg.num = msg.results.length;
+            }
+            console.log('forwarding %d results (current before=%d after=%d)', msg.totalresults, numbefore, numafter);
+            console.log(JSON.stringify(msg));
+            clientWS.send(JSON.stringify(msg));
+        })
+
+        clipWebSocket.on('error', (event) => {
+            console.log('Connection to CLIP refused');
+        });
+
+    } catch(error) {
+        console.log("Cannot connect to CLIP server");   
     }
-    
-    numafter = msg.results.length;
-    if (numafter !== numbefore) {
-        msg.totalresults = msg.results.length;
-        msg.num = msg.results.length;
-    }
-    console.log('forwarding %d results (current before=%d after=%d)', msg.totalresults, numbefore, numafter);
-    console.log(JSON.stringify(msg));
-    clientWS.send(JSON.stringify(msg));
-})
+}
+
+connectToCLIPServer();
+
 
 
 
