@@ -3,6 +3,7 @@ const cors = require('cors');
 
 const wss = new WebSocket.Server({ noServer: true });
 const clipWebSocket = new WebSocket('ws://extreme00.itec.aau.at:8002');
+const pingInterval = 60000; // Send ping every 60 seconds
 const mongouri = 'mongodb://extreme00.itec.aau.at:27017'; // Replace with your MongoDB connection string
 
 const MongoClient = require('mongodb').MongoClient;
@@ -98,7 +99,19 @@ wss.on('connection', (ws) => {
 
 clipWebSocket.on('open', () => {
     console.log('connected to CLIP server');
+
+    // Start sending ping messages at the specified interval
+    setInterval(() => {
+        if (clipWebSocket.readyState === WebSocket.OPEN) {
+            clipWebSocket.send('ping');
+        }
+    }, pingInterval);
 })
+
+clipWebSocket.on('close', (event) => {
+    // Handle connection closed
+    console.log('Connection to CLIP closed', event.code, event.reason);
+});
 
 const weekdays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
