@@ -1,11 +1,13 @@
+const config = require('./local-config.js');
 const WebSocket = require('ws');
 const cors = require('cors');
 
-const CLIPSERVERURL = 'ws://extreme00.itec.aau.at:8002';
+const CLIPSERVERURL = 'ws://' + config.config_CLIP_SERVER; //'ws://extreme00.itec.aau.at:8002';
+console.log(CLIPSERVERURL);
 const wss = new WebSocket.Server({ noServer: true });
 let clipWebSocket = null;
 
-const mongouri = 'mongodb://extreme00.itec.aau.at:27017'; // Replace with your MongoDB connection string
+const mongouri = 'mongodb://' + config.config_MONGODB_SERVER; // Replace with your MongoDB connection string
 
 const MongoClient = require('mongodb').MongoClient;
 const mongoclient = new MongoClient(mongouri);
@@ -18,6 +20,7 @@ let text, concept, object, year, month, day, weekday;
 //////////////////////////////////////////////////////////////////
 const http = require('http');
 const express = require('express');
+const { LocalConfig } = require('./local-config');
 const app = express();
 app.use(cors());  // Enable CORS for all routes
 const port = 8080
