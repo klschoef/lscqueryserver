@@ -8,9 +8,9 @@ const wss = new WebSocket.Server({ noServer: true });
 let clipWebSocket = null;
 
 const mongouri = 'mongodb://' + config.config_MONGODB_SERVER; // Replace with your MongoDB connection string
-
 const MongoClient = require('mongodb').MongoClient;
-const mongoclient = new MongoClient(mongouri);
+let mongoclient = null;
+connectMongoDB();
 
 // Variables to store the parameter values
 let text, concept, object, year, month, day, weekday;
@@ -50,18 +50,6 @@ wss.on('connection', (ws) => {
         console.log('clipWebSocket is null, try to re-connect');
         connectToCLIPServer();
     }
-
-    //connect to mongo
-    mongoclient.connect((err) => {
-        if (err) {
-            console.error('error connecting to mongodb: ', err);
-            return;
-        }
-    });
-
-    mongoclient.on('close', () => {
-        console.log('mongodb connection closed');
-    });
 
     ws.on('message', (message) => {
         console.log('received from client: %s', message);
@@ -114,7 +102,7 @@ wss.on('connection', (ws) => {
     ws.on('close', function close() {
         console.log('client disconnected');
         // Close the MongoDB connection when finished
-        mongoclient.close();
+        //mongoclient.close();
     });
 });
 
@@ -272,10 +260,27 @@ function parseParameters(inputString) {
 // MongoDB Queries
 //////////////////////////////////////////////////////////////////
 
+function connectMongoDB() {
+    mongoclient = new MongoClient(mongouri);
+
+    //connect to mongo
+    mongoclient.connect((err) => {
+        if (err) {
+            console.error('error connecting to mongodb: ', err);
+            return;
+        }
+    });
+
+    mongoclient.on('close', () => {
+        console.log('mongodb connection closed');
+    });
+}
+
 async function queryImages(yearValue, monthValue, dayValue, weekdayValue) {
   try {
     if (!mongoclient.isConnected()) {
         console.log('mongodb not connected!');
+        connectMongoDB();
     } else {
         const database = mongoclient.db('lsc'); // Replace with your database name
         const collection = database.collection('images'); // Replace with your collection name
@@ -321,6 +326,7 @@ async function queryImages(yearValue, monthValue, dayValue, weekdayValue) {
     }
   } catch (error) {
     console.log("error with mongodb: " + error);
+    await mongoclient.close();
   } finally {
     // Close the MongoDB connection when finished
     //await mongoclient.close();
@@ -331,6 +337,7 @@ async function queryImage(url) {
     try {
         if (!mongoclient.isConnected()) {
             console.log('mongodb not connected!');
+            connectMongoDB();
         } else {
             const database = mongoclient.db('lsc'); // Replace with your database name
             const collection = database.collection('images'); // Replace with your collection name
@@ -354,6 +361,7 @@ async function queryImage(url) {
   
     } catch (error) {
         console.log("error with mongodb: " + error);
+        await mongoclient.close();
     } finally {
       // Close the MongoDB connection when finished
       //await mongoclient.close();
