@@ -14,7 +14,7 @@ connectMongoDB();
 
 // Variables to store the parameter values
 let text, concept, object, place, year, month, day, weekday, filename;
-let combineCLIPWithMongo = false, filterCLIPResultsByDate = false;
+let combineCLIPWithMongo = false, filterCLIPResultsByDate = false, queryMode = 'all';
 
 //////////////////////////////////////////////////////////////////
 // Connection to client
@@ -75,6 +75,8 @@ wss.on('connection', (ws) => {
             msg = JSON.parse(message);
             if (msg.content.type === 'textquery') {
                 nodequery = msg.content.query;
+
+                queryMode = msg.content.queryMode;
 
                 clipQuery = parseParameters(msg.content.query)
                 combineCLIPWithMongo = false;
@@ -260,6 +262,22 @@ function connectToCLIPServer() {
                     let processingInfo = {"type": "info",  "num": 1, "totalresults": 1, "message": documents.length + " results in database, now filtering..."};
                     clientWS.send(JSON.stringify(processingInfo));
 
+                    if (queryMode === 'first') {
+                        const dateSet = new Set();
+
+                        for (let k = 0; k < documents.length; k++) {
+                            let eyear = documents[k].filepath.substring(0,4);
+                            let emonth = documents[k].filepath.substring(4,6);
+                            let eday = documents[k].filepath.substring(7,9);
+                            let dateStr = eyear + emonth + eday;
+                            if (dateSet.has(dateStr) === false) {
+                                dateSet.add(dateStr);
+                            } else {
+                                documents.splice(k--,1);
+                            }
+                        }
+                    }
+
                     for (let i = 0; i < msg.results.length; i++) {
                         const elem = msg.results[i];
 
@@ -286,15 +304,17 @@ function connectToCLIPServer() {
             } 
             else {
 
-                if (filterCLIPResultsByDate === true) {
+                if (filterCLIPResultsByDate === true || queryMode !== 'all') {
             
                     console.log('filter query');
                     let ly = year.toString().trim().length;
                     let lm = month.toString().trim().length;
                     let ld = day.toString().trim().length;
                     let lw = weekday.toString().trim().length;
+
+                    const dateSet = new Set();
                 
-                    if (ly > 0 || lm > 0 || ld > 0 || lw > 0) {
+                    if (ly > 0 || lm > 0 || ld > 0 || lw > 0 || queryMode !== 'all') {
                         for (let i = 0; i < msg.results.length; i++) {
                             const elem = msg.results[i];
                             let eyear = elem.substring(0,4);
@@ -309,6 +329,14 @@ function connectToCLIPServer() {
                             }
                             else if (ld > 0 && eday !== day) {
                                 msg.results.splice(i--, 1);
+                            }
+                            else if (queryMode === 'first') {
+                                let dateStr = eyear + emonth + eday;
+                                if (dateSet.has(dateStr)) {
+                                    msg.results.splice(i--,1);
+                                } else {
+                                    dateSet.add(dateStr);
+                                }
                             }
                             else if (lw > 0) {
                                 let dstr = eyear + '-' + emonth + '-' + eday;
@@ -393,10 +421,24 @@ async function queryImages(yearValue, monthValue, dayValue, weekdayValue, textVa
         mongoDBResults = { "num": count, "totalresults": count };
         let results = [];
 
+        const dateSet = new Set();
+
         await cursor.forEach(document => {
             // Access the filename field in each document
             const filename = document.filepath;
-            results.push(filename);
+
+            if (queryMode === 'first') {
+                let eyear = filename.substring(0,4);
+                let emonth = filename.substring(4,6);
+                let eday = filename.substring(7,9);
+                let dateStr = eyear + emonth + eday;
+                if (dateSet.has(dateStr) === false) {
+                    results.push(filename);
+                    dateSet.add(dateStr);
+                } 
+            } else {
+                results.push(filename);
+            }
             //console.log(filename);
         });
 
