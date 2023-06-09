@@ -253,7 +253,7 @@ function connectToCLIPServer() {
                 var { query, projection } = getMongoQuery(year, month, day, weekday, text, concept, object, place, filename); 
                 console.log('(1) mongodb query: %s', JSON.stringify(query));
                 const sortCriteria = { filepath: 1 }; //-1 for desc
-                collection.find(query, {projection, sort: sortCriteria}).toArray((error, documents) => {
+                collection.find(query, projection).sort(sortCriteria).toArray((error, documents) => {
                     if (error) {
                         return;
                     }
@@ -262,28 +262,25 @@ function connectToCLIPServer() {
                     let processingInfo = {"type": "info",  "num": 1, "totalresults": 1, "message": documents.length + " results in database, now filtering..."};
                     clientWS.send(JSON.stringify(processingInfo));
 
-                    if (queryMode === 'first') {
-                        const dateSet = new Set();
-
-                        for (let k = 0; k < documents.length; k++) {
-                            let eyear = documents[k].filepath.substring(0,4);
-                            let emonth = documents[k].filepath.substring(4,6);
-                            let eday = documents[k].filepath.substring(7,9);
-                            let dateStr = eyear + emonth + eday;
-                            if (dateSet.has(dateStr) === false) {
-                                dateSet.add(dateStr);
-                            } else {
-                                documents.splice(k--,1);
-                            }
-                        }
-                    }
+                    const dateSet = new Set();
 
                     for (let i = 0; i < msg.results.length; i++) {
                         const elem = msg.results[i];
 
                         for (let k = 0; k < documents.length; k++) {
                             if (elem === documents[k].filepath) {
-                                combinedResults.push(elem);
+                                if (queryMode === 'first') {
+                                    let eyear = elem.substring(0,4);
+                                    let emonth = elem.substring(4,6);
+                                    let eday = elem.substring(7,9);
+                                    let dateStr = eyear + emonth + eday;
+                                    if (dateSet.has(dateStr) === false) {
+                                        dateSet.add(dateStr);
+                                        combinedResults.push(elem);
+                                    }
+                                } else {
+                                    combinedResults.push(elem);
+                                }
                                 break;
                             } else if (elem < documents[k].filepath) {
                                 break;
