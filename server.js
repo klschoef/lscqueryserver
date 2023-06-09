@@ -409,9 +409,11 @@ async function queryImages(yearValue, monthValue, dayValue, weekdayValue, textVa
 
         if (JSON.stringify(query) === "{}") {
             console.log('empty query not allowed');
+            mongoDBResults = { "num": 0, "totalresults": 0, "results": []  };
+            clientWS.send(JSON.stringify(mongoDBResults));
             return;
         }
-        
+
         console.log('mongodb query: %s', JSON.stringify(query));
         const cursor = collection.find(query, projection); //use sort(sortCriteria); //will give an array
         const count = await cursor.count();
