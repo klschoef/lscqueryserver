@@ -13,7 +13,7 @@ let mongoclient = null;
 connectMongoDB();
 
 // Variables to store the parameter values
-let text, concept, object, year, month, day, weekday, filename;
+let text, concept, object, place, year, month, day, weekday, filename;
 let combineCLIPWithMongo = false, filterCLIPResultsByDate = false;
 
 //////////////////////////////////////////////////////////////////
@@ -93,17 +93,17 @@ wss.on('connection', (ws) => {
                         filterCLIPResultsByDate = true;
                         clipWebSocket.send(JSON.stringify(msg));
                     } else {
-                        //C L I P   +   N O D E   Q U E R Y
+                        //C L I P   +   D B   Q U E R Y
                         combineCLIPWithMongo = true;
                         clipWebSocket.send(JSON.stringify(msg));
                     }
 
                     
                 } else {
-                    //N O D E   Q U E R Y
+                    //D B   Q U E R Y
                     console.log('querying Node server');
                     mongoDBResults = {}
-                    queryImages(year, month, day, weekday, text, filename).then(() => {
+                    queryImages(year, month, day, weekday, text, concept, object, place, filename).then(() => {
                         console.log("query finished");
                         if ("results" in mongoDBResults) {
                             console.log('sending %d results to client', mongoDBResults.results.length);
@@ -143,7 +143,7 @@ function parseParameters(inputString) {
     // Define the regex pattern to match parameters and their values
     const regex = /-([a-zA-Z]+)\s(\S+)/g;
     
-    text = concept = object = year = month = day = weekday = filename = '';
+    text = concept = object = place = year = month = day = weekday = filename = '';
 
     // Iterate over matches
     let match;
@@ -168,6 +168,9 @@ function parseParameters(inputString) {
             case 'o':
                 object = value;
                 break;
+            case 'p':
+                place = value;
+                break;
             case 'wd':
                 weekday = value;
                 break;
@@ -182,15 +185,11 @@ function parseParameters(inputString) {
                 break;
             case 'y':
                 year = value;
-                console.log('querying for year %s', year);
-                // Call the function to execute the query
-                //queryDocumentsByYear(year).catch(console.error);
                 break;
-                // Add more cases for additional parameters if needed
         }
     }
 
-    console.log('filters: text=%s concept=%s object=%s weekday=%s day=%s month=%s year=%s', text, concept, object, weekday, day, month, year);
+    console.log('filters: text=%s concept=%s object=%s place=%s weekday=%s day=%s month=%s year=%s filename=%s', text, concept, object, place, weekday, day, month, year, filename);
 
     // Extract and remove the matched parameters from the input string
     const updatedString = inputString.replace(regex, '').trim();
@@ -249,7 +248,7 @@ function connectToCLIPServer() {
 
                 const database = mongoclient.db('lsc'); // Replace with your database name
                 const collection = database.collection('images'); // Replace with your collection name
-                var { query, projection } = getNodeQuery(year, month, day, weekday, text, filename); 
+                var { query, projection } = getMongoQuery(year, month, day, weekday, text, concept, object, place, filename); 
                 console.log('(1) mongodb query: %s', JSON.stringify(query));
                 const sortCriteria = { filepath: 1 }; //-1 for desc
                 collection.find(query, {projection, sort: sortCriteria}).toArray((error, documents) => {
@@ -371,7 +370,7 @@ function connectMongoDB() {
     });
 }
 
-async function queryImages(yearValue, monthValue, dayValue, weekdayValue, textValue, filenameValue) {
+async function queryImages(yearValue, monthValue, dayValue, weekdayValue, textValue, conceptValue, objectValue, placeValue, filenameValue) {
   try {
     if (!mongoclient.isConnected()) {
         console.log('mongodb not connected!');
@@ -381,7 +380,7 @@ async function queryImages(yearValue, monthValue, dayValue, weekdayValue, textVa
         const collection = database.collection('images'); // Replace with your collection name
 
         const sortCriteria = { minute_id: 1 }; //-1 for desc
-        var { query, projection } = getNodeQuery(yearValue, monthValue, dayValue, weekdayValue, textValue, filenameValue); //-1 for desc
+        var { query, projection } = getMongoQuery(yearValue, monthValue, dayValue, weekdayValue, textValue, conceptValue, objectValue, placeValue, filenameValue); //-1 for desc
 
         console.log('mongodb query: %s', JSON.stringify(query));
         const cursor = collection.find(query, projection); //use sort(sortCriteria); //will give an array
@@ -403,10 +402,10 @@ async function queryImages(yearValue, monthValue, dayValue, weekdayValue, textVa
 
         mongoDBResults.results = results;
     }
-  } catch (error) {
+  } /*catch (error) {
     console.log("error with mongodb: " + error);
     await mongoclient.close();
-  } finally {
+  }*/ finally {
     // Close the MongoDB connection when finished
     //await mongoclient.close();
   }
@@ -414,7 +413,7 @@ async function queryImages(yearValue, monthValue, dayValue, weekdayValue, textVa
 
 
 
-function getNodeQuery(yearValue, monthValue, dayValue, weekdayValue, textValue, filenameValue) {
+function getMongoQuery(yearValue, monthValue, dayValue, weekdayValue, textValue, conceptValue, objectValue, placeValue, filenameValue) {
     let query = {};
 
     if (yearValue.toString().trim().length > 0) {
@@ -438,9 +437,26 @@ function getNodeQuery(yearValue, monthValue, dayValue, weekdayValue, textValue, 
         query.texts = text;
     }
 
+    if (conceptValue.toString().trim().length > 0) {
+        let concept = { $elemMatch: { "concept": { $regex: conceptValue, $options: 'i' } } };
+        query.concepts = concept;
+    }
+
+    if (objectValue.toString().trim().length > 0) {
+        let obj = { $elemMatch: { "object": { $regex: objectValue, $options: 'i' } } };
+        query.objects = obj;
+    }
+
+    if (placeValue.toString().trim().length > 0) {
+        let place = { $elemMatch: { "place": { $regex: placeValue, $options: 'i' } } };
+        query.places = place;
+    }
+
     if (filenameValue.toString().trim().length > 0) {
         query.filename = { $regex: filenameValue, $options: 'i' };
     }
+
+    console.log(JSON.stringify(query));
 
     const projection = { filepath: 1 };
 
