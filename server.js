@@ -82,7 +82,7 @@ wss.on('connection', (ws) => {
                 combineCLIPWithMongo = false;
                 filterCLIPResultsByDate = false;
                 
-                if (clipQuery.length > 0) {
+                if (clipQuery.trim().length > 0) {
                     console.log('sending to CLIP server: "%s" len=%d content-len=%d', clipQuery, clipQuery.length, msg.content.query.length);
                     msg.content.query = clipQuery
 
@@ -407,6 +407,11 @@ async function queryImages(yearValue, monthValue, dayValue, weekdayValue, textVa
         const sortCriteria = { minute_id: 1 }; //-1 for desc
         var { query, projection } = getMongoQuery(yearValue, monthValue, dayValue, weekdayValue, textValue, conceptValue, objectValue, placeValue, filenameValue); //-1 for desc
 
+        if (JSON.stringify(query) === "{}") {
+            console.log('empty query not allowed');
+            return;
+        }
+        
         console.log('mongodb query: %s', JSON.stringify(query));
         const cursor = collection.find(query, projection); //use sort(sortCriteria); //will give an array
         const count = await cursor.count();
