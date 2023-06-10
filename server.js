@@ -2,6 +2,8 @@ const config = require('./local-config.js');
 const WebSocket = require('ws');
 const cors = require('cors');
 
+const DISTINCTIVE_L2DIST1 = 10.0;
+const DISTINCTIVE_L2DIST2 = 15.0;
 const CLIPSERVERURL = 'ws://' + config.config_CLIP_SERVER; //'ws://extreme00.itec.aau.at:8002';
 console.log(CLIPSERVERURL);
 const wss = new WebSocket.Server({ noServer: true });
@@ -90,7 +92,7 @@ wss.on('connection', (ws) => {
                         msg.content.resultsperpage = msg.content.maxresults;
                     }
 
-                    if (isOnlyDateFilter()) {
+                    if (isOnlyDateFilter() && queryMode !== 'distinctive' && queryMode !== 'moredistinctive') {
                         //C L I P   Q U E R Y   +   F I L T E R
                         filterCLIPResultsByDate = true;
                         clipWebSocket.send(JSON.stringify(msg));
@@ -411,7 +413,7 @@ async function queryImages(yearValue, monthValue, dayValue, weekdayValue, textVa
             console.log('empty query not allowed');
             mongoDBResults = { "num": 0, "totalresults": 0, "results": []  };
             clientWS.send(JSON.stringify(mongoDBResults));
-            return;
+            return;7
         }
 
         console.log('mongodb query: %s', JSON.stringify(query));
@@ -500,6 +502,12 @@ function getMongoQuery(yearValue, monthValue, dayValue, weekdayValue, textValue,
 
     if (filenameValue.toString().trim().length > 0) {
         query.filename = { $regex: filenameValue, $options: 'i' };
+    }
+
+    if (queryMode === 'distinctive') {
+        query.l2dist = { $gt: DISTINCTIVE_L2DIST1 };
+    } else if (queryMode == 'moredistinctive') {
+        query.l2dist = { $gt: DISTINCTIVE_L2DIST2 };
     }
 
     console.log(JSON.stringify(query));
