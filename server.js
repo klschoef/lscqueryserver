@@ -85,6 +85,7 @@ wss.on('connection', (ws) => {
 
                 queryMode = msg.content.queryMode;
 
+                lenBefore = msg.content.query.trim().length;
                 clipQuery = parseParameters(msg.content.query)
                 combineCLIPWithMongo = false;
                 filterCLIPResultsByDate = false;
@@ -98,20 +99,24 @@ wss.on('connection', (ws) => {
                 }*/
                 
                 if (clipQuery.trim().length > 0) {
-                    console.log('sending to CLIP server: "%s" len=%d content-len=%d', clipQuery, clipQuery.length, msg.content.query.length);
                     msg.content.query = clipQuery
 
-                    if (clipQuery.length !== msg.content.query.trim().length) {
+                    if (clipQuery.length !== lenBefore) { //msg.content.query.trim().length || isOnlyDateFilter()) {
                         msg.content.resultsperpage = msg.content.maxresults;
                     }
+
+                    console.log('sending to CLIP server: "%s" len=%d content-len=%d (rpp=%d, max=%d) - %d %d %d', clipQuery, clipQuery.length, msg.content.query.length, msg.content.resultsperpage, msg.content.maxresults, clipQuery.length, msg.content.query.trim().length, lenBefore);
+                    
 
                     if (isOnlyDateFilter() && queryMode !== 'distinctive' && queryMode !== 'moredistinctive') {
                         //C L I P   Q U E R Y   +   F I L T E R
                         filterCLIPResultsByDate = true;
+                        //msg.content.resultsperpage = msg.content.maxresults;
                         clipWebSocket.send(JSON.stringify(msg));
                     } else {
                         //C L I P   +   D B   Q U E R Y
                         combineCLIPWithMongo = true;
+                        //msg.content.resultsperpage = msg.content.maxresults;
                         clipWebSocket.send(JSON.stringify(msg));
                     }
 
