@@ -15,7 +15,7 @@ let mongoclient = null;
 connectMongoDB();
 
 // Variables to store the parameter values
-let text, concept, object, place, year, month, day, weekday, filename;
+let text, concept, object, place, year, month, day, weekday, filename, similarto;
 let combineCLIPWithMongo = false, filterCLIPResultsByDate = false, queryMode = 'all';
 
 //////////////////////////////////////////////////////////////////
@@ -43,7 +43,11 @@ server.on('upgrade', (request, socket, head) => {
 function isOnlyDateFilter() {
     if (weekday.toString().trim().length > 0 ||
         text.toString().trim().length > 0 ||
-        filename.toString().trim().length > 0) {
+        filename.toString().trim().length > 0 ||
+        concept.toString().trim().length > 0 ||
+        object.toString().trim().length > 0 ||
+        place.toString().trim().length > 0 ||
+        similarto.toString().trim().length > 0) {
             return false;
         }
     else {
@@ -75,7 +79,8 @@ wss.on('connection', (ws) => {
         } else {
 
             msg = JSON.parse(message);
-            if (msg.content.type === 'textquery') {
+            if (msg.content.type === 'textquery') { // || msg.content.type == 'file-similarityquery'
+
                 nodequery = msg.content.query;
 
                 queryMode = msg.content.queryMode;
@@ -83,6 +88,14 @@ wss.on('connection', (ws) => {
                 clipQuery = parseParameters(msg.content.query)
                 combineCLIPWithMongo = false;
                 filterCLIPResultsByDate = false;
+
+                //special hack for file-similarity
+                /*if (similarto !== '') {
+                    msg.query = similarto;
+                    msg.pathprefix = '';
+                    msg.type = 'file-similarityquery';
+                    clipQuery = 'non-empty-string';
+                }*/
                 
                 if (clipQuery.trim().length > 0) {
                     console.log('sending to CLIP server: "%s" len=%d content-len=%d', clipQuery, clipQuery.length, msg.content.query.length);
@@ -147,7 +160,7 @@ function parseParameters(inputString) {
     // Define the regex pattern to match parameters and their values
     const regex = /-([a-zA-Z]+)\s(\S+)/g;
     
-    text = concept = object = place = year = month = day = weekday = filename = '';
+    text = concept = object = place = year = month = day = weekday = filename = similarto = '';
 
     // Iterate over matches
     let match;
@@ -186,6 +199,9 @@ function parseParameters(inputString) {
                 break;
             case 'fn':
                 filename = value;
+                break;
+            case 'sim':
+                similarto = value;
                 break;
             case 'y':
                 year = value;
@@ -481,23 +497,47 @@ function getMongoQuery(yearValue, monthValue, dayValue, weekdayValue, textValue,
     }
 
     if (textValue.toString().trim().length > 0) {
-        let text = { $elemMatch: { "text": { $regex: textValue, $options: 'i' } } };
-        query.texts = text;
+        if (textValue.includes(',')) {
+            let texts = textValue.split(",");
+            let text = { $all: texts };
+            query['texts.text'] = text;
+        } else {
+            let text = { $elemMatch: { "text": { $regex: textValue, $options: 'i' } } };
+            query.texts = text;
+        }
     }
 
     if (conceptValue.toString().trim().length > 0) {
-        let concept = { $elemMatch: { "concept": { $regex: conceptValue, $options: 'i' } } };
-        query.concepts = concept;
+        if (conceptValue.includes(',')) {
+            let concepts = conceptValue.split(",");
+            let concept = { $all: concepts };
+            query['concepts.concept'] = concept;
+        } else {
+            let concept = { $elemMatch: { "concept": { $regex: conceptValue, $options: 'i' } } };
+            query.concepts = concept;
+        }
     }
 
     if (objectValue.toString().trim().length > 0) {
-        let obj = { $elemMatch: { "object": { $regex: objectValue, $options: 'i' } } };
-        query.objects = obj;
+        if (objectValue.includes(',')) {
+            let objects = objectValue.split(",");
+            let obj = { $all: objects };
+            query['objects.object'] = obj;
+        } else {
+            let obj = { $elemMatch: { "object": { $regex: objectValue, $options: 'i' } } };
+            query.objects = obj;
+        }
     }
 
     if (placeValue.toString().trim().length > 0) {
-        let place = { $elemMatch: { "place": { $regex: placeValue, $options: 'i' } } };
-        query.places = place;
+        if (placeValue.includes(',')) {
+            let places = placeValue.split(",");
+            let place = { $all: places };
+            query['places.place'] = place;
+        } else {
+            let place = { $elemMatch: { "place": { $regex: placeValue, $options: 'i' } } };
+            query.places = place;
+        }
     }
 
     if (filenameValue.toString().trim().length > 0) {
