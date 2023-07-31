@@ -1,6 +1,7 @@
 const config = require('./local-config.js');
 const WebSocket = require('ws');
 const cors = require('cors');
+const fs = require('fs');
 
 const { v4: uuidv4 } = require('uuid');
 
@@ -82,6 +83,13 @@ wss.on('connection', (ws) => {
         console.log('received from client: %s (%s)', message, clientId);
         // Handle the received message as needed
 
+        // Append jsonString to the file
+        fs.appendFile('lscqueryserverlog.json', message, function (err) {
+            if (err) {
+                console.log('Error writing file', err)
+            }
+        });
+
         //check CLIPserver connection
         if (clipWebSocket === null) {
             console.log('clipWebSocket is null');
@@ -141,6 +149,13 @@ wss.on('connection', (ws) => {
                             console.log('sending %d results to client', mongoDBResults.results.length);
                             //console.log(JSON.stringify(mongoDBResults));
                             ws.send(JSON.stringify(mongoDBResults));
+
+                            // Append jsonString to the file
+                            fs.appendFile('lscqueryserverlog.json', JSON.stringify(mongoDBResults), function (err) {
+                                if (err) {
+                                    console.log('Error writing file', err)
+                                }
+                            });
                         }
                     });
                 }
@@ -152,6 +167,13 @@ wss.on('connection', (ws) => {
                         console.log('sending %d results to client', mongoDBResults.results.length);
                         //console.log(JSON.stringify(mongoDBResults));
                         ws.send(JSON.stringify(mongoDBResults));
+
+                        // Append jsonString to the file
+                        fs.appendFile('lscqueryserverlog.json', JSON.stringify(mongoDBResults), function (err) {
+                            if (err) {
+                                console.log('Error writing file', err)
+                            }
+                        });
                     }
                 });
             } 
@@ -331,6 +353,13 @@ function connectToCLIPServer() {
                     //console.log(JSON.stringify(msg));
                     clientWS.send(JSON.stringify(msg));
 
+                    // Append jsonString to the file
+                    fs.appendFile('lscqueryserverlog.json', JSON.stringify(msg), function (err) {
+                        if (err) {
+                            console.log('Error writing file', err)
+                        }
+                    });
+
                 });
 
             } 
@@ -391,6 +420,13 @@ function connectToCLIPServer() {
                 console.log('forwarding %d results (current before=%d after=%d) to client %s', msg.totalresults, numbefore, numafter, clientId);
                 //console.log(JSON.stringify(msg));
                 clientWS.send(JSON.stringify(msg));
+
+                // Append jsonString to the file
+                fs.appendFile('lscqueryserverlog.json', JSON.stringify(msg), function (err) {
+                    if (err) {
+                        console.log('Error writing file', err)
+                    }
+                });
             }
             
 
@@ -448,6 +484,14 @@ async function queryImages(yearValue, monthValue, dayValue, weekdayValue, textVa
             console.log('empty query not allowed');
             mongoDBResults = { "num": 0, "totalresults": 0, "results": []  };
             clientWS.send(JSON.stringify(mongoDBResults));
+
+            // Append jsonString to the file
+            fs.appendFile('lscqueryserverlog.json', JSON.stringify(mongoDBResults), function (err) {
+                if (err) {
+                    console.log('Error writing file', err)
+                }
+            });
+
             return;
         }
 
