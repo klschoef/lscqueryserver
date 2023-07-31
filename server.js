@@ -2,6 +2,8 @@ const config = require('./local-config.js');
 const WebSocket = require('ws');
 const cors = require('cors');
 
+const { v4: uuidv4 } = require('uuid');
+
 const DISTINCTIVE_L2DIST1 = 10.0;
 const DISTINCTIVE_L2DIST2 = 15.0;
 const CLIPSERVERURL = 'ws://' + config.config_CLIP_SERVER; //'ws://extreme00.itec.aau.at:8002';
@@ -55,13 +57,19 @@ function isOnlyDateFilter() {
     }
 }
 
+function generateUniqueClientId() {
+    return uuidv4();
+}
 
-let clientWS;
+
+let clients = new Map(); // This map stores the associations between client IDs and their WebSocket connections
 let mongoDBResults = {};
 wss.on('connection', (ws) => {
     console.log('client connected');
     // WebSocket connection handling logic
-    clientWS = ws;
+    
+    let clientId = generateUniqueClientId(); // You would need to implement this function
+    clients.set(clientId, ws);
 
     //check CLIPserver connection
     if (clipWebSocket === null) {
@@ -100,6 +108,7 @@ wss.on('connection', (ws) => {
                 
                 if (clipQuery.trim().length > 0) {
                     msg.content.query = clipQuery
+                    msg.content.clientId = clientId
 
                     if (clipQuery.length !== lenBefore) { //msg.content.query.trim().length || isOnlyDateFilter()) {
                         msg.content.resultsperpage = msg.content.maxresults;
@@ -125,12 +134,12 @@ wss.on('connection', (ws) => {
                     //D B   Q U E R Y
                     console.log('querying Node server');
                     mongoDBResults = {}
-                    queryImages(year, month, day, weekday, text, concept, object, place, filename).then(() => {
+                    queryImages(year, month, day, weekday, text, concept, object, place, filename, clientWS).then(() => {
                         console.log("query finished");
                         if ("results" in mongoDBResults) {
                             console.log('sending %d results to client', mongoDBResults.results.length);
                             //console.log(JSON.stringify(mongoDBResults));
-                            clientWS.send(JSON.stringify(mongoDBResults));
+                            ws.send(JSON.stringify(mongoDBResults));
                         }
                     });
                 }
@@ -141,7 +150,7 @@ wss.on('connection', (ws) => {
                     if ("results" in mongoDBResults) {
                         console.log('sending %d results to client', mongoDBResults.results.length);
                         //console.log(JSON.stringify(mongoDBResults));
-                        clientWS.send(JSON.stringify(mongoDBResults));
+                        ws.send(JSON.stringify(mongoDBResults));
                     }
                 });
             } 
@@ -263,6 +272,8 @@ function connectToCLIPServer() {
         
             msg = JSON.parse(message);
             numbefore = msg.results.length;
+            clientId = msg.clientId;
+            clientWS = clients.get(clientId);
 
             console.log('received %s results from CLIP server', msg.num);
 
@@ -418,7 +429,7 @@ function connectMongoDB() {
     });
 }
 
-async function queryImages(yearValue, monthValue, dayValue, weekdayValue, textValue, conceptValue, objectValue, placeValue, filenameValue) {
+async function queryImages(yearValue, monthValue, dayValue, weekdayValue, textValue, conceptValue, objectValue, placeValue, filenameValue, clientWS) {
   try {
     if (!mongoclient.isConnected()) {
         console.log('mongodb not connected!');
@@ -434,7 +445,7 @@ async function queryImages(yearValue, monthValue, dayValue, weekdayValue, textVa
             console.log('empty query not allowed');
             mongoDBResults = { "num": 0, "totalresults": 0, "results": []  };
             clientWS.send(JSON.stringify(mongoDBResults));
-            return;7
+            return;
         }
 
         console.log('mongodb query: %s', JSON.stringify(query));
