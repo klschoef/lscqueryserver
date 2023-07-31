@@ -429,7 +429,7 @@ function connectMongoDB() {
     });
 }
 
-async function queryImages(yearValue, monthValue, dayValue, weekdayValue, textValue, conceptValue, objectValue, placeValue, filenameValue, clientWS) {
+async function queryImages(yearValue, monthValue, dayValue, weekdayValue, textValue, conceptValue, objectValue, placeValue, filenameValue, clientId) {
   try {
     if (!mongoclient.isConnected()) {
         console.log('mongodb not connected!');
@@ -437,6 +437,8 @@ async function queryImages(yearValue, monthValue, dayValue, weekdayValue, textVa
     } else {
         const database = mongoclient.db('lsc'); // Replace with your database name
         const collection = database.collection('images'); // Replace with your collection name
+
+        clientWS = clients.get(clientId);
 
         const sortCriteria = { minute_id: 1 }; //-1 for desc
         var { query, projection } = getMongoQuery(yearValue, monthValue, dayValue, weekdayValue, textValue, conceptValue, objectValue, placeValue, filenameValue); //-1 for desc
