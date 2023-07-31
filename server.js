@@ -65,11 +65,12 @@ function generateUniqueClientId() {
 let clients = new Map(); // This map stores the associations between client IDs and their WebSocket connections
 let mongoDBResults = {};
 wss.on('connection', (ws) => {
-    console.log('client connected');
     // WebSocket connection handling logic
     
     let clientId = generateUniqueClientId(); // You would need to implement this function
     clients.set(clientId, ws);
+
+    console.log('client connected: %s', clientId);
 
     //check CLIPserver connection
     if (clipWebSocket === null) {
@@ -78,7 +79,7 @@ wss.on('connection', (ws) => {
     }
 
     ws.on('message', (message) => {
-        console.log('received from client: %s', message);
+        console.log('received from client: %s (%s)', message, clientId);
         // Handle the received message as needed
 
         //check CLIPserver connection
@@ -326,7 +327,7 @@ function connectToCLIPServer() {
                     msg.totalresults = combinedResults.length;
                     msg.num = combinedResults.length;
 
-                    console.log('forwarding %d combined results', msg.totalresults);
+                    console.log('forwarding %d combined results to client %s', msg.totalresults, clientId);
                     //console.log(JSON.stringify(msg));
                     clientWS.send(JSON.stringify(msg));
 
@@ -387,7 +388,7 @@ function connectToCLIPServer() {
                     msg.totalresults = msg.results.length;
                     msg.num = msg.results.length;
                 }
-                console.log('forwarding %d results (current before=%d after=%d)', msg.totalresults, numbefore, numafter);
+                console.log('forwarding %d results (current before=%d after=%d) to client %s', msg.totalresults, numbefore, numafter, clientId);
                 //console.log(JSON.stringify(msg));
                 clientWS.send(JSON.stringify(msg));
             }
@@ -453,7 +454,7 @@ async function queryImages(yearValue, monthValue, dayValue, weekdayValue, textVa
         console.log('mongodb query: %s', JSON.stringify(query));
         const cursor = collection.find(query, projection); //use sort(sortCriteria); //will give an array
         const count = await cursor.count();
-        console.log('%d results', count);
+        console.log('%d results to client %s', count, clientId);
 
         let processingInfo = {"type": "info",  "num": 1, "totalresults": 1, "message": count + " results in database, loading from server..."};
         clientWS.send(JSON.stringify(processingInfo));
