@@ -134,7 +134,7 @@ wss.on('connection', (ws) => {
                     //D B   Q U E R Y
                     console.log('querying Node server');
                     mongoDBResults = {}
-                    queryImages(year, month, day, weekday, text, concept, object, place, filename, clientWS).then(() => {
+                    queryImages(year, month, day, weekday, text, concept, object, place, filename, clientId).then(() => {
                         console.log("query finished");
                         if ("results" in mongoDBResults) {
                             console.log('sending %d results to client', mongoDBResults.results.length);
