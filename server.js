@@ -181,6 +181,10 @@ wss.on('connection', (ws) => {
                     }
                 });
             } 
+            else if (msg.content.type === 'objects') {
+                mongoDBResults = {}
+                queryObjects(clientId);
+            }
         }
     });
     
@@ -660,6 +664,34 @@ async function queryImage(url) {
       // Close the MongoDB connection when finished
       //await mongoclient.close();
     }
-  }
+}
 
+
+async function queryObjects(clientId) {
+    try {
+        if (!mongoclient.isConnected()) {
+            console.log('mongodb not connected!');
+            connectMongoDB();
+        } else {
+            const database = mongoclient.db('lsc'); // Replace with your database name
+            const collection = database.collection('objects'); // Replace with your collection name
+        
+            //const cursor = collection.find({},{object:1});
+
+            collection.aggregate([{ $sort: {object: 1} }]).toArray().then((docs) => {
+                clientWS = clients.get(clientId);
+                clientWS.send(JSON.stringify(docs));
+            }).catch((err) => {
+                console.log(err);
+            });
+        }
+  
+    } catch (error) {
+        console.log("error with mongodb: " + error);
+        await mongoclient.close();
+    } finally {
+      // Close the MongoDB connection when finished
+      //await mongoclient.close();
+    }
+  }
 
