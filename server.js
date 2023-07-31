@@ -185,6 +185,14 @@ wss.on('connection', (ws) => {
                 mongoDBResults = {}
                 queryObjects(clientId);
             }
+            else if (msg.content.type === 'concepts') {
+                mongoDBResults = {}
+                queryConcepts(clientId);
+            }
+            else if (msg.content.type === 'places') {
+                mongoDBResults = {}
+                queryPlaces(clientId);
+            }
         }
     });
     
@@ -683,6 +691,64 @@ async function queryObjects(clientId) {
             });
             
             let response = { "type": "objects", "num": results.length, "results": results };
+            clientWS = clients.get(clientId);
+            clientWS.send(JSON.stringify(response))
+        }
+  
+    } catch (error) {
+        console.log("error with mongodb: " + error);
+        await mongoclient.close();
+    } finally {
+      // Close the MongoDB connection when finished
+      //await mongoclient.close();
+    }
+  }
+
+  async function queryConcepts(clientId) {
+    try {
+        if (!mongoclient.isConnected()) {
+            console.log('mongodb not connected!');
+            connectMongoDB();
+        } else {
+            const database = mongoclient.db('lsc'); // Replace with your database name
+            const collection = database.collection('concepts'); // Replace with your collection name
+        
+            const cursor = collection.find({},{concept:1});
+            let results = [];
+            await cursor.forEach(document => {
+                results.push(document);
+            });
+            
+            let response = { "type": "concepts", "num": results.length, "results": results };
+            clientWS = clients.get(clientId);
+            clientWS.send(JSON.stringify(response))
+        }
+  
+    } catch (error) {
+        console.log("error with mongodb: " + error);
+        await mongoclient.close();
+    } finally {
+      // Close the MongoDB connection when finished
+      //await mongoclient.close();
+    }
+  }
+
+  async function queryPlaces(clientId) {
+    try {
+        if (!mongoclient.isConnected()) {
+            console.log('mongodb not connected!');
+            connectMongoDB();
+        } else {
+            const database = mongoclient.db('lsc'); // Replace with your database name
+            const collection = database.collection('places'); // Replace with your collection name
+        
+            const cursor = collection.find({},{place:1});
+            let results = [];
+            await cursor.forEach(document => {
+                results.push(document);
+            });
+            
+            let response = { "type": "places", "num": results.length, "results": results };
             clientWS = clients.get(clientId);
             clientWS.send(JSON.stringify(response))
         }
