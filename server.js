@@ -83,19 +83,21 @@ wss.on('connection', (ws) => {
         console.log('received from client: %s (%s)', message, clientId);
         // Handle the received message as needed
 
-        // Append jsonString to the file
-        fs.appendFile('lscqueryserverlog.json', message, function (err) {
-            if (err) {
-                console.log('Error writing file', err)
-            }
-        });
-
         //check CLIPserver connection
         if (clipWebSocket === null) {
             console.log('clipWebSocket is null');
         } else {
 
             msg = JSON.parse(message);
+
+            // Append jsonString to the file
+            msg.clientId = clientId;
+            fs.appendFile('lscqueryserverlog.json', JSON.stringify(msg), function (err) {
+                if (err) {
+                    console.log('Error writing file', err)
+                }
+            });
+
             if (msg.content.type === 'textquery') { // || msg.content.type == 'file-similarityquery'
 
                 nodequery = msg.content.query;
