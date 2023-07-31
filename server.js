@@ -153,6 +153,7 @@ wss.on('connection', (ws) => {
                             ws.send(JSON.stringify(mongoDBResults));
 
                             // Append jsonString to the file
+                            mongoDBResults.clientId = clientId;
                             fs.appendFile('lscqueryserverlog.json', JSON.stringify(mongoDBResults), function (err) {
                                 if (err) {
                                     console.log('Error writing file', err)
@@ -171,6 +172,7 @@ wss.on('connection', (ws) => {
                         ws.send(JSON.stringify(mongoDBResults));
 
                         // Append jsonString to the file
+                        mongoDBResults.clientId = clientId;
                         fs.appendFile('lscqueryserverlog.json', JSON.stringify(mongoDBResults), function (err) {
                             if (err) {
                                 console.log('Error writing file', err)
@@ -356,6 +358,7 @@ function connectToCLIPServer() {
                     clientWS.send(JSON.stringify(msg));
 
                     // Append jsonString to the file
+                    msg.clientId = clientId;
                     fs.appendFile('lscqueryserverlog.json', JSON.stringify(msg), function (err) {
                         if (err) {
                             console.log('Error writing file', err)
@@ -424,6 +427,7 @@ function connectToCLIPServer() {
                 clientWS.send(JSON.stringify(msg));
 
                 // Append jsonString to the file
+                msg.clientId = clientId;
                 fs.appendFile('lscqueryserverlog.json', JSON.stringify(msg), function (err) {
                     if (err) {
                         console.log('Error writing file', err)
@@ -488,6 +492,7 @@ async function queryImages(yearValue, monthValue, dayValue, weekdayValue, textVa
             clientWS.send(JSON.stringify(mongoDBResults));
 
             // Append jsonString to the file
+            mongoDBResults.clientId = clientId;
             fs.appendFile('lscqueryserverlog.json', JSON.stringify(mongoDBResults), function (err) {
                 if (err) {
                     console.log('Error writing file', err)
