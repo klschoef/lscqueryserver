@@ -676,14 +676,15 @@ async function queryObjects(clientId) {
             const database = mongoclient.db('lsc'); // Replace with your database name
             const collection = database.collection('objects'); // Replace with your collection name
         
-            //const cursor = collection.find({},{object:1});
-
-            collection.aggregate([{ $sort: {object: 1} }]).toArray().then((docs) => {
-                clientWS = clients.get(clientId);
-                clientWS.send(JSON.stringify(docs));
-            }).catch((err) => {
-                console.log(err);
+            const cursor = collection.find({},{object:1});
+            let results = [];
+            await cursor.forEach(document => {
+                results.push(document);
             });
+            
+            let response = { "type": "objects", "num": results.length, "results": results };
+            clientWS = clients.get(clientId);
+            clientWS.send(JSON.stringify(response))
         }
   
     } catch (error) {
