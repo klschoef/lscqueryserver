@@ -64,7 +64,6 @@ function generateUniqueClientId() {
 
 
 let clients = new Map(); // This map stores the associations between client IDs and their WebSocket connections
-let mongoDBResults = {};
 wss.on('connection', (ws) => {
     // WebSocket connection handling logic
     
@@ -144,17 +143,15 @@ wss.on('connection', (ws) => {
                 } else {
                     //D B   Q U E R Y
                     console.log('querying Node server');
-                    mongoDBResults = {}
-                    queryImages(year, month, day, weekday, text, concept, object, place, filename, clientId).then(() => {
-                        console.log("query finished");
-                        if ("results" in mongoDBResults) {
-                            console.log('sending %d results to client', mongoDBResults.results.length);
-                            //console.log(JSON.stringify(mongoDBResults));
-                            ws.send(JSON.stringify(mongoDBResults));
+                    queryImages(year, month, day, weekday, text, concept, object, place, filename, clientId).then((queryResults) => {
+                        console.log("query* finished");
+                        if ("results" in queryResults) {
+                            console.log('sending %d results to client', queryResults.results.length);
+                            ws.send(JSON.stringify(queryResults));
 
                             // Append jsonString to the file
-                            mongoDBResults.clientId = clientId;
-                            fs.appendFile('lscqueryserverlog.json', JSON.stringify(mongoDBResults), function (err) {
+                            queryResults.clientId = clientId;
+                            fs.appendFile('lscqueryserverlog.json', JSON.stringify(queryResults), function (err) {
                                 if (err) {
                                     console.log('Error writing file', err)
                                 }
@@ -163,17 +160,15 @@ wss.on('connection', (ws) => {
                     });
                 }
             } else if (msg.content.type === 'metadataquery') {
-                mongoDBResults = {}
-                queryImage(msg.content.imagepath).then(() => {
+                queryImage(msg.content.imagepath).then((queryResults) => {
                     console.log("query finished");
-                    if ("results" in mongoDBResults) {
-                        console.log('sending %d results to client', mongoDBResults.results.length);
-                        //console.log(JSON.stringify(mongoDBResults));
-                        ws.send(JSON.stringify(mongoDBResults));
+                    if ("results" in queryResults) {
+                        console.log('sending %d results to client', queryResults.results.length);
+                        ws.send(JSON.stringify(queryResults));
 
                         // Append jsonString to the file
-                        mongoDBResults.clientId = clientId;
-                        fs.appendFile('lscqueryserverlog.json', JSON.stringify(mongoDBResults), function (err) {
+                        queryResults.clientId = clientId;
+                        fs.appendFile('lscqueryserverlog.json', JSON.stringify(queryResults), function (err) {
                             if (err) {
                                 console.log('Error writing file', err)
                             }
@@ -182,16 +177,16 @@ wss.on('connection', (ws) => {
                 });
             } 
             else if (msg.content.type === 'objects') {
-                mongoDBResults = {}
                 queryObjects(clientId);
             }
             else if (msg.content.type === 'concepts') {
-                mongoDBResults = {}
                 queryConcepts(clientId);
             }
             else if (msg.content.type === 'places') {
-                mongoDBResults = {}
                 queryPlaces(clientId);
+            }
+            else if (msg.content.type === 'texts') {
+                queryTexts(clientId);
             }
         }
     });
@@ -500,18 +495,18 @@ async function queryImages(yearValue, monthValue, dayValue, weekdayValue, textVa
 
         if (JSON.stringify(query) === "{}") {
             console.log('empty query not allowed');
-            mongoDBResults = { "num": 0, "totalresults": 0, "results": []  };
-            clientWS.send(JSON.stringify(mongoDBResults));
+            let queryResults = { "num": 0, "totalresults": 0, "results": []  };
+            clientWS.send(JSON.stringify(queryResults));
 
             // Append jsonString to the file
-            mongoDBResults.clientId = clientId;
-            fs.appendFile('lscqueryserverlog.json', JSON.stringify(mongoDBResults), function (err) {
+            queryResults.clientId = clientId;
+            fs.appendFile('lscqueryserverlog.json', JSON.stringify(queryResults), function (err) {
                 if (err) {
                     console.log('Error writing file', err)
                 }
             });
 
-            return;
+            return queryResults;
         }
 
         console.log('mongodb query: %s', JSON.stringify(query));
@@ -522,7 +517,7 @@ async function queryImages(yearValue, monthValue, dayValue, weekdayValue, textVa
         let processingInfo = {"type": "info",  "num": 1, "totalresults": 1, "message": count + " results in database, loading from server..."};
         clientWS.send(JSON.stringify(processingInfo));
 
-        mongoDBResults = { "num": count, "totalresults": count };
+        let queryResults = { "num": count, "totalresults": count };
         let results = [];
 
         const dateSet = new Set();
@@ -546,7 +541,8 @@ async function queryImages(yearValue, monthValue, dayValue, weekdayValue, textVa
             //console.log(filename);
         });
 
-        mongoDBResults.results = results;
+        queryResults.results = results;
+        return queryResults;
     }
   } /*catch (error) {
     console.log("error with mongodb: " + error);
@@ -595,6 +591,7 @@ function getMongoQuery(yearValue, monthValue, dayValue, weekdayValue, textValue,
             let concept = { $all: concepts };
             query['concepts.concept'] = concept;
         } else {
+            conceptValue = '^' + conceptValue + '$';
             let concept = { $elemMatch: { "concept": { $regex: conceptValue, $options: 'i' } } };
             query.concepts = concept;
         }
@@ -606,6 +603,7 @@ function getMongoQuery(yearValue, monthValue, dayValue, weekdayValue, textValue,
             let obj = { $all: objects };
             query['objects.object'] = obj;
         } else {
+            objectValue = '^' + objectValue + '$';
             let obj = { $elemMatch: { "object": { $regex: objectValue, $options: 'i' } } };
             query.objects = obj;
         }
@@ -617,6 +615,7 @@ function getMongoQuery(yearValue, monthValue, dayValue, weekdayValue, textValue,
             let place = { $all: places };
             query['places.place'] = place;
         } else {
+            placeValue = '^' + placeValue + '$';
             let place = { $elemMatch: { "place": { $regex: placeValue, $options: 'i' } } };
             query.places = place;
         }
@@ -653,7 +652,7 @@ async function queryImage(url) {
             console.log('mongodb query: %s', JSON.stringify(query));
             const cursor = collection.find(query);
         
-            mongoDBResults = { "type": "metadata", "num": 1, "totalresults": 1 };
+            let queryResults = { "type": "metadata", "num": 1, "totalresults": 1 };
             let results = [];
         
             await cursor.forEach(document => {
@@ -662,7 +661,8 @@ async function queryImage(url) {
                 //console.log(filename);
             });
         
-            mongoDBResults.results = results;
+            queryResults.results = results;
+            return queryResults;
         }
   
     } catch (error) {
@@ -684,7 +684,7 @@ async function queryObjects(clientId) {
             const database = mongoclient.db('lsc'); // Replace with your database name
             const collection = database.collection('objects'); // Replace with your collection name
         
-            const cursor = collection.find({},{object:1});
+            const cursor = collection.find({},{name:1}).sort({name: 1});
             let results = [];
             await cursor.forEach(document => {
                 results.push(document);
@@ -692,7 +692,8 @@ async function queryObjects(clientId) {
             
             let response = { "type": "objects", "num": results.length, "results": results };
             clientWS = clients.get(clientId);
-            clientWS.send(JSON.stringify(response))
+            clientWS.send(JSON.stringify(response));
+            //console.log('sent back: ' + JSON.stringify(response));
         }
   
     } catch (error) {
@@ -713,7 +714,7 @@ async function queryObjects(clientId) {
             const database = mongoclient.db('lsc'); // Replace with your database name
             const collection = database.collection('concepts'); // Replace with your collection name
         
-            const cursor = collection.find({},{concept:1});
+            const cursor = collection.find({},{name:1}).sort({name: 1});
             let results = [];
             await cursor.forEach(document => {
                 results.push(document);
@@ -721,7 +722,8 @@ async function queryObjects(clientId) {
             
             let response = { "type": "concepts", "num": results.length, "results": results };
             clientWS = clients.get(clientId);
-            clientWS.send(JSON.stringify(response))
+            clientWS.send(JSON.stringify(response));
+            //console.log('sent back: ' + JSON.stringify(response));
         }
   
     } catch (error) {
@@ -742,7 +744,7 @@ async function queryObjects(clientId) {
             const database = mongoclient.db('lsc'); // Replace with your database name
             const collection = database.collection('places'); // Replace with your collection name
         
-            const cursor = collection.find({},{place:1});
+            const cursor = collection.find({},{name:1}).sort({name: 1});
             let results = [];
             await cursor.forEach(document => {
                 results.push(document);
@@ -750,7 +752,38 @@ async function queryObjects(clientId) {
             
             let response = { "type": "places", "num": results.length, "results": results };
             clientWS = clients.get(clientId);
-            clientWS.send(JSON.stringify(response))
+            clientWS.send(JSON.stringify(response));
+            //console.log('sent back: ' + JSON.stringify(response));
+        }
+  
+    } catch (error) {
+        console.log("error with mongodb: " + error);
+        await mongoclient.close();
+    } finally {
+      // Close the MongoDB connection when finished
+      //await mongoclient.close();
+    }
+  }
+
+  async function queryTexts(clientId) {
+    try {
+        if (!mongoclient.isConnected()) {
+            console.log('mongodb not connected!');
+            connectMongoDB();
+        } else {
+            const database = mongoclient.db('lsc'); // Replace with your database name
+            const collection = database.collection('texts'); // Replace with your collection name
+        
+            const cursor = collection.find({},{name:1}).sort({name: 1});
+            let results = [];
+            await cursor.forEach(document => {
+                results.push(document);
+            });
+            
+            let response = { "type": "texts", "num": results.length, "results": results };
+            clientWS = clients.get(clientId);
+            clientWS.send(JSON.stringify(response));
+            //console.log('sent back: ' + JSON.stringify(response));
         }
   
     } catch (error) {
