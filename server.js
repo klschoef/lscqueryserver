@@ -774,7 +774,7 @@ async function queryObjects(clientId) {
             const database = mongoclient.db('lsc'); // Replace with your database name
             const collection = database.collection('texts'); // Replace with your collection name
         
-            const cursor = collection.find({},{name:1}).sort({count: -1});
+            const cursor = collection.find({},{name:1}).sort({name: 1});
             let results = [];
             await cursor.forEach(document => {
                 results.push(document);
