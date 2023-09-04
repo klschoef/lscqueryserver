@@ -162,7 +162,7 @@ wss.on('connection', (ws) => {
             } else if (msg.content.type === 'metadataquery') {
                 queryImage(msg.content.imagepath).then((queryResults) => {
                     console.log("query finished");
-                    if ("results" in queryResults) {
+                    if (queryResults != undefined && "results" in queryResults) {
                         console.log('sending %d results to client', queryResults.results.length);
                         ws.send(JSON.stringify(queryResults));
 
