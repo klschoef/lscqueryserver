@@ -21,6 +21,15 @@ connectMongoDB();
 let text, concept, object, place, year, month, day, weekday, filename, similarto;
 let combineCLIPWithMongo = false, filterCLIPResultsByDate = false, queryMode = 'all';
 
+class QuerySettings {
+    constructor(combineCLIPwithMongo = false, combineCLIPwithCLIP = 0) {
+        this.combineCLIPwithMongo = combineCLIPwithMongo;
+        this.combineCLIPwithCLIP = combineCLIPwithCLIP;
+    }
+}
+
+let settingsMap = new Map();
+
 //////////////////////////////////////////////////////////////////
 // Connection to client
 //////////////////////////////////////////////////////////////////
@@ -58,6 +67,48 @@ function isOnlyDateFilter() {
     }
 }
 
+function extractDateFromFilename(filename) {
+    // Extracting the date components from the filename
+    const regex = /[0-9]+\/[0-9]+\/([0-9]{4})([0-9]{2})([0-9]{2})\_([0-9]{2})([0-9]{2})([0-9]{2})\_([0-9]+)/;
+
+    const match = regex.exec(filename);
+
+    if (match) {
+        const [, year, month, day, hour, minute, second, frame] = match;
+
+        // Convert strings to numbers for the Date constructor
+        const numericYear = parseInt(year, 10);
+        const numericMonth = parseInt(month, 10) - 1; // Month is 0-based in JavaScript Date object
+        const numericDay = parseInt(day, 10);
+        const numericHour = parseInt(hour, 10);
+        const numericMinute = parseInt(minute, 10);
+        const numericSecond = parseInt(second, 10);
+
+        const date = new Date(numericYear, numericMonth, numericDay, numericHour, numericMinute, numericSecond);
+        return date;
+    } else {
+        console.log("No date match found.");
+        return null;
+    }
+}
+
+
+function getDateComponents(date) {
+    // Extracting year, month, and day from the Date object
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1; // Adding 1 since getMonth() returns zero-based month
+    const day = date.getDate();
+
+    return { year, month, day };
+}
+
+function areSameDay(date1, date2) {
+    const { year: year1, month: month1, day: day1 } = getDateComponents(date1);
+    const { year: year2, month: month2, day: day2 } = getDateComponents(date2);
+
+    return year1 === year2 && month1 === month2 && day1 === day2;
+}
+
 function generateUniqueClientId() {
     return uuidv4();
 }
@@ -69,6 +120,8 @@ wss.on('connection', (ws) => {
     
     let clientId = generateUniqueClientId(); // You would need to implement this function
     clients.set(clientId, ws);
+    let clientSettings = new QuerySettings();
+    settingsMap.set(clientId, clientSettings);
 
     console.log('client connected: %s', clientId);
 
@@ -115,8 +168,10 @@ wss.on('connection', (ws) => {
                     msg.type = 'file-similarityquery';
                     clipQuery = 'non-empty-string';
                 }*/
-                
-                if (clipQuery.trim().length > 0) {
+
+                if (clipQuery.trim().length > 0) { // only place for clip query
+                    // if we have a clip query, we send it to the CLIP server with all parameters, and the clip server also handles the other parameters like text, concept, object, place, etc.
+                    // otherwise we only do a search via the database in the else branch
                     msg.content.query = clipQuery
                     msg.content.clientId = clientId
 
@@ -125,9 +180,53 @@ wss.on('connection', (ws) => {
                     }
 
                     console.log('sending to CLIP server: "%s" len=%d content-len=%d (rpp=%d, max=%d) - %d %d %d', clipQuery, clipQuery.length, msg.content.query.length, msg.content.resultsperpage, msg.content.maxresults, clipQuery.length, msg.content.query.trim().length, lenBefore);
-                    
+
+                    let clipQueries = Array();
+                    let tmpClipQuery = clipQuery;
+                    if (tmpClipQuery.includes('<')) {
+                        let idxS = -1;
+                        do {
+                            idxS = tmpClipQuery.indexOf('<');
+                            if (idxS > -1) {
+                                clipQueries.push(tmpClipQuery.substring(0,idxS));
+                                tmpClipQuery = tmpClipQuery.substring(idxS+1);
+                            } else {
+                                clipQueries.push(tmpClipQuery); //last one
+                            }
+                        } while (idxS > -1);
+                        console.log('found ' + clipQueries.length + ' temporal queries:');
+                        for (let i=0; i < clipQueries.length; i++) {
+                            console.log(clipQueries[i]);
+                        }
+                    }
 
                     if (isOnlyDateFilter() && queryMode !== 'distinctive' && queryMode !== 'moredistinctive') {
+                        //C L I P   Q U E R Y   +   F I L T E R
+                        filterCLIPResultsByDate = true;
+                    } else {
+                        //C L I P   +   D B   Q U E R Y
+                        combineCLIPWithMongo = true;
+                    }
+
+                    if (clipQueries.length > 0) {
+                        console.log("C L I P   Q U E R Y   +   F I L T E R")
+                        clientSettings.combineCLIPwithCLIP = clipQueries.length;
+                        for (let i=0; i < clipQueries.length; i++) {
+                            let tmsg = msg;
+                            tmsg.content.resultsperpage = 1234;
+                            tmsg.content.query = clipQueries[i];
+                            //tmsg.content.resultsperpage = tmsg.content.maxresults;
+                            clipWebSocket.send(JSON.stringify(tmsg));
+                        }
+                        clipQueries = Array();
+                    } else {
+                        console.log("C L I P   Q U E R Y   +   D B   Q U E R Y")
+                        //C L I P   +   D B   Q U E R Y
+                        clipWebSocket.send(JSON.stringify(msg));
+                    }
+
+
+                    /*if (isOnlyDateFilter() && queryMode !== 'distinctive' && queryMode !== 'moredistinctive') {
                         //C L I P   Q U E R Y   +   F I L T E R
                         filterCLIPResultsByDate = true;
                         //msg.content.resultsperpage = msg.content.maxresults;
@@ -137,7 +236,7 @@ wss.on('connection', (ws) => {
                         combineCLIPWithMongo = true;
                         //msg.content.resultsperpage = msg.content.maxresults;
                         clipWebSocket.send(JSON.stringify(msg));
-                    }
+                    }*/
 
                     
                 } else {
@@ -207,14 +306,16 @@ wss.on('connection', (ws) => {
 function parseParameters(inputString) {
     // Define the regex pattern to match parameters and their values
     const regex = /-([a-zA-Z]+)\s(\S+)/g;
-    
+
+    console.log("inputString: " + inputString)
+
     text = concept = object = place = year = month = day = weekday = filename = similarto = '';
 
     // Iterate over matches
     let match;
     while ((match = regex.exec(inputString.trim()))) {
         const [, parameter, value] = match; // Destructure the matched values
-
+        console.log("parameter: " + parameter + " value: " + value)
         // Assign the value to the corresponding variable
         switch (parameter) {
             case 't':
@@ -275,6 +376,7 @@ function connectToCLIPServer() {
         console.log('trying to connect to CLIP...');
         clipWebSocket = new WebSocket(CLIPSERVERURL);
         console.log('after connection trial')
+        pendingCLIPResults = Array();
 
         clipWebSocket.on('open', () => {
             console.log('connected to CLIP server');
@@ -308,6 +410,7 @@ function connectToCLIPServer() {
             numbefore = msg.results.length;
             clientId = msg.clientId;
             clientWS = clients.get(clientId);
+            let clientSettings = settingsMap.get(clientId);
 
             console.log('received %s results from CLIP server', msg.num);
 
@@ -374,7 +477,138 @@ function connectToCLIPServer() {
 
                 });
 
-            } 
+            }
+            else if (clientSettings.combineCLIPwithCLIP > 0) {
+                pendingCLIPResults.push(msg);
+                console.log("combineCLIPwithCLIP", clientSettings.combineCLIPwithCLIP, pendingCLIPResults.length)
+                clientSettings.combineCLIPwithCLIP--;
+                if (clientSettings.combineCLIPwithCLIP === 0) {
+                    let jointResults = Array();
+                    let jointResultsIdx = Array();
+                    let jointScores = Array();
+
+                    console.log("combineCLIPwithCLIP === 0", clientSettings.combineCLIPwithCLIP, pendingCLIPResults.length)
+
+                    const target = pendingCLIPResults[pendingCLIPResults.length - 1];
+                    const target_results = target.results;
+                    const targetIdx = target.resultsidx;
+                    const targetScores = target.scores;
+                    console.log("target message?", target);
+
+
+                    // iterate through all results
+                    for (let result_id = 0; result_id < target_results.length; result_id++) {
+                        const current_result = target_results[result_id];
+                        const current_id = targetIdx[result_id];
+                        const current_score = targetScores[result_id];
+                        console.log("current_result", current_result, current_id, current_score)
+                        const current_date = extractDateFromFilename(current_result);
+                        console.log('date: ' + current_date);
+                        let valid = true;
+                        let last_pr_date = current_date;
+
+                        // iterate through all previous results
+                        for (let pr_id = pendingCLIPResults.length - 2; pr_id >= 0; pr_id--) {
+                            const pr = pendingCLIPResults[pr_id];
+                            console.log("check previous meta", pr_id, pr.results.length, pr.resultsidx.length, pr.scores.length);
+                            const pr_results = pr.results;
+                            const pr_resultsidx = pr.resultsidx;
+                            const pr_scores = pr.scores;
+
+                            if (valid === false) {
+                                break;
+                            }
+
+                            let found = false;
+
+                            // iterate through all result string in the clip result
+                            for (let pr_result_id = 0; pr_result_id < pr_results.length; pr_result_id++) {
+                                const pr_result = pr_results[pr_result_id];
+                                const pr_id = pr_resultsidx[pr_result_id];
+                                const pr_score = pr_scores[pr_result_id];
+                                const pr_date = extractDateFromFilename(pr_result);
+
+                                // check if we are in the same day
+                                if (areSameDay(current_date, pr_date)) {
+                                    console.log("compare success", current_date, pr_date, areSameDay(current_date, pr_date))
+                                    // check if the previous result is later than the last previous result
+                                    if (last_pr_date > pr_date) {
+                                        last_pr_date = pr_date;
+                                        found = true;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (found === false) {
+                                valid = false;
+                                break;
+                            }
+                        }
+
+                        if (valid) { // add the result to the joint result if we have all valid prev results
+                            console.log("valid result: " + current_result);
+                            jointResults.push(current_result);
+                            jointResultsIdx.push(current_id);
+                            jointScores.push(current_score);
+                        }
+                    }
+                    /*for (let r = 1; r < pendingCLIPResults.length - 1; r++) { // iterate through the results
+                        console.log("check " + r + " " + pendingCLIPResults.length)
+                        let tresPrev = pendingCLIPResults[r-1].results;
+                        let tres = pendingCLIPResults[r].results; // string in format 201903/24/20190324_092645_000.jpg
+                        let tresIdx = pendingCLIPResults[r].resultsidx; // id of image
+                        let tresScores = pendingCLIPResults[r].scores; // score of image
+
+                        for (let i = 0; i < tres.length; i++) { // iterate through each result
+                            jointResults.push(tres[i]); // temporary to make it work
+                            jointResultsIdx.push(tresIdx[i]); // temporary to make it work
+                            jointScores.push(tresScores[i]); // temporary to make it work
+                            let date = extractDateFromFilename(tres[i]);
+                            console.log('date: ' + date);
+                            let vid = getVideoId(tres[i]); // current video
+                            let frame = extractFrameNumber(tres[i]); // get all frames in the video
+
+                            for (let j = 0; j < tresPrev.length; j++) { // iterate through the previous result
+                                let vidP = getVideoId(tresPrev[j]); //get the previous video
+                                let frameP = extractFrameNumber(tresPrev[j]); //get the frames in the previous video
+
+                                if (vid === vidP && frame > frameP) { // if the video is the same and the frame is greater than the previous frame
+
+                                    let videoid = getVideoId(tres[i]); // isn't this the same as vid?
+                                    if (clientSettings.videoFiltering === 'first' && videoIds.includes(videoid)) {
+                                        countFiltered++;
+                                        continue;
+                                    }
+                                    videoIds.push(videoid);
+
+                                    jointResults.push(tres[i]);
+                                    jointResultsIdx.push(tresIdx[i]);
+                                    jointScores.push(tresScores[i]);
+                                    console.log('found: ' + tres[i] + ': ' + vid + ' ' + frame + " > " + vidP + " " + frameP);
+                                    break;
+                                    // Not sure if this method just filter two subqueries. If we have
+                                    // car < restaurant it should work as expected
+                                    // but if we have bed < car < restaurant it's possible that we get results of
+                                    // videos where we see a car and then a restaurant, but without a bed before?
+                                    // because with that code we only check the previous subquery result, and not all previous results?
+                                }
+
+                        }
+                    }
+                    }*/
+                    msg.results = jointResults;
+                    msg.resultsidx = jointResultsIdx;
+                    msg.scores = jointScores;
+                    msg.totalresults = jointResults.length;
+                    msg.num = jointResults.length;
+                    msg.totalresults =  jointResults.length;
+                    console.log('forwarding %d joint results to client %s', msg.totalresults, clientId);
+                    pendingCLIPResults = Array();
+                    clientWS.send(JSON.stringify(msg));
+                }
+
+            }
             else {
 
                 if (filterCLIPResultsByDate === true || queryMode !== 'all') {
