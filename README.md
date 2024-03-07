@@ -17,3 +17,7 @@ The `<` parameter is used to specify which images or keyframes was shown before.
 Example Video: A car drives on a street, then we have a switch to a restaurant where a human eats something. The example query can be 'car street < restaurant human'.
 
 In the case of lifelogs, we need to search in the same day, instead of the keyframes.
+
+Current state:
+- The < only use it with the clip server (it needs to get combined with the mongo db results, and query parts)
+- There is a page size of 1234 currently for each part of the query
