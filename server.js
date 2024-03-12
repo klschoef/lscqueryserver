@@ -243,14 +243,15 @@ wss.on('connection', (ws) => {
                         }
                     });
                 }
-            } else if (msg.content.type === 'metadataquery') {
+            }
+            else if (msg.content.type === 'metadataquery') {
                 queryImage(msg.content.imagepath).then((queryResults) => {
                     console.log("query finished");
                     if (queryResults != undefined && "results" in queryResults) {
                         console.log('sending %d results to client', queryResults.results.length);
                         ws.send(JSON.stringify(queryResults));
 
-                        // Append jsonString to the file
+                        // Append jsonString to the file (for log purposes)
                         queryResults.clientId = clientId;
                         fs.appendFile('lscqueryserverlog.json', JSON.stringify(queryResults), function (err) {
                             if (err) {
@@ -813,6 +814,9 @@ function getMongoQuery(yearValue, monthValue, dayValue, weekdayValue, textValue,
     return { query, projection };
 }
 
+/*
+Query one single image by its filepath
+ */
 async function queryImage(url) {
     try {
         if (!mongoclient.isConnected()) {

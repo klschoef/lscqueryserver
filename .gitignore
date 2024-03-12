@@ -117,3 +117,9 @@ dist
 .pnp.*
 local-config.js
 lscqueryserverlog.json
+
+# Python
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
