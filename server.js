@@ -224,21 +224,6 @@ wss.on('connection', (ws) => {
                         //C L I P   +   D B   Q U E R Y
                         clipWebSocket.send(JSON.stringify(msg));
                     }
-
-
-                    /*if (isOnlyDateFilter() && queryMode !== 'distinctive' && queryMode !== 'moredistinctive') {
-                        //C L I P   Q U E R Y   +   F I L T E R
-                        filterCLIPResultsByDate = true;
-                        //msg.content.resultsperpage = msg.content.maxresults;
-                        clipWebSocket.send(JSON.stringify(msg));
-                    } else {
-                        //C L I P   +   D B   Q U E R Y
-                        combineCLIPWithMongo = true;
-                        //msg.content.resultsperpage = msg.content.maxresults;
-                        clipWebSocket.send(JSON.stringify(msg));
-                    }*/
-
-                    
                 } else {
                     //D B   Q U E R Y
                     console.log('querying Node server');
@@ -302,7 +287,6 @@ wss.on('connection', (ws) => {
 //////////////////////////////////////////////////////////////////
 // Parameter Parsing
 //////////////////////////////////////////////////////////////////
-
 function parseParameters(inputString) {
     // Define the regex pattern to match parameters and their values
     const regex = /-([a-zA-Z]+)\s(\S+)/g;
@@ -553,50 +537,7 @@ function connectToCLIPServer() {
                             jointScores.push(current_score);
                         }
                     }
-                    /*for (let r = 1; r < pendingCLIPResults.length - 1; r++) { // iterate through the results
-                        console.log("check " + r + " " + pendingCLIPResults.length)
-                        let tresPrev = pendingCLIPResults[r-1].results;
-                        let tres = pendingCLIPResults[r].results; // string in format 201903/24/20190324_092645_000.jpg
-                        let tresIdx = pendingCLIPResults[r].resultsidx; // id of image
-                        let tresScores = pendingCLIPResults[r].scores; // score of image
 
-                        for (let i = 0; i < tres.length; i++) { // iterate through each result
-                            jointResults.push(tres[i]); // temporary to make it work
-                            jointResultsIdx.push(tresIdx[i]); // temporary to make it work
-                            jointScores.push(tresScores[i]); // temporary to make it work
-                            let date = extractDateFromFilename(tres[i]);
-                            console.log('date: ' + date);
-                            let vid = getVideoId(tres[i]); // current video
-                            let frame = extractFrameNumber(tres[i]); // get all frames in the video
-
-                            for (let j = 0; j < tresPrev.length; j++) { // iterate through the previous result
-                                let vidP = getVideoId(tresPrev[j]); //get the previous video
-                                let frameP = extractFrameNumber(tresPrev[j]); //get the frames in the previous video
-
-                                if (vid === vidP && frame > frameP) { // if the video is the same and the frame is greater than the previous frame
-
-                                    let videoid = getVideoId(tres[i]); // isn't this the same as vid?
-                                    if (clientSettings.videoFiltering === 'first' && videoIds.includes(videoid)) {
-                                        countFiltered++;
-                                        continue;
-                                    }
-                                    videoIds.push(videoid);
-
-                                    jointResults.push(tres[i]);
-                                    jointResultsIdx.push(tresIdx[i]);
-                                    jointScores.push(tresScores[i]);
-                                    console.log('found: ' + tres[i] + ': ' + vid + ' ' + frame + " > " + vidP + " " + frameP);
-                                    break;
-                                    // Not sure if this method just filter two subqueries. If we have
-                                    // car < restaurant it should work as expected
-                                    // but if we have bed < car < restaurant it's possible that we get results of
-                                    // videos where we see a car and then a restaurant, but without a bed before?
-                                    // because with that code we only check the previous subquery result, and not all previous results?
-                                }
-
-                        }
-                    }
-                    }*/
                     msg.results = jointResults;
                     msg.resultsidx = jointResultsIdx;
                     msg.scores = jointScores;
