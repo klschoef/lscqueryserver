@@ -1,0 +1,531 @@
+[
+  {
+    "_id": "62b851579a55c4aafe089fb3",
+    "filename": "20190102_091905_000",
+    "filepath": "201901/02/20190102_091905_000.jpg",
+    "datetime": "2019-01-02T08:19:00",
+    "timename": "morning",
+    "minute_id": "20190102_0919",
+    "day": 2,
+    "month": 1,
+    "year": 2019,
+    "date": "20190102",
+    "weekday": "wednesday",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        "0.0",
+        "0.0"
+      ]
+    },
+    "altitude": 0.0,
+    "places": [
+      {
+        "place": "sky",
+        "score": 0.8504826426506042
+      }
+    ],
+    "concepts": [],
+    "objects": [],
+    "texts": [],
+    "mscaption": "a dark brown surface",
+    "heart_rate": 96.0,
+    "reduced": false,
+    "local_time": "20190102_0919"
+  },
+  {
+    "_id": "62b851579a55c4aafe089fb4",
+    "filename": "20190102_091937_000",
+    "filepath": "201901/02/20190102_091937_000.jpg",
+    "datetime": "2019-01-02T08:19:00",
+    "timename": "morning",
+    "minute_id": "20190102_0919",
+    "day": 2,
+    "month": 1,
+    "year": 2019,
+    "date": "20190102",
+    "weekday": "wednesday",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        "0.0",
+        "0.0"
+      ]
+    },
+    "altitude": 0.0,
+    "places": [
+      {
+        "place": "berth",
+        "score": 0.2954666018486023
+      }
+    ],
+    "concepts": [
+      {
+        "concept": "panpipe",
+        "score": 0.33538857102394104
+      },
+      {
+        "concept": "marimba",
+        "score": 0.20717169344425201
+      }
+    ],
+    "objects": [
+      {
+        "object": "person",
+        "score": 0.27542686462402344,
+        "bbox": [
+          "2",
+          "767",
+          "296",
+          "1021"
+        ]
+      }
+    ],
+    "texts": [],
+    "mscaption": "a light on a wall",
+    "heart_rate": 96.0,
+    "reduced": true,
+    "local_time": "20190102_0919",
+    "l2dist": 19.488408401627936
+  },
+  {
+    "_id": "62b851579a55c4aafe089fb5",
+    "filename": "20190102_092009_000",
+    "filepath": "201901/02/20190102_092009_000.jpg",
+    "datetime": "2019-01-02T08:20:00",
+    "timename": "morning",
+    "minute_id": "20190102_0920",
+    "day": 2,
+    "month": 1,
+    "year": 2019,
+    "date": "20190102",
+    "weekday": "wednesday",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        "-6.6752757",
+        "53.1906097"
+      ]
+    },
+    "altitude": -6.6752757,
+    "places": [],
+    "concepts": [
+      {
+        "concept": "shoe_shop",
+        "score": 0.5454268455505371
+      }
+    ],
+    "objects": [
+      {
+        "object": "person",
+        "score": 0.7413313388824463,
+        "bbox": [
+          "0",
+          "316",
+          "28",
+          "607"
+        ]
+      }
+    ],
+    "texts": [],
+    "mscaption": "a person holding a cat",
+    "heart_rate": 97.0,
+    "reduced": false,
+    "time_zone": "Europe/Dublin",
+    "local_time": "20190102_0920",
+    "l2dist": 17.049944165467384
+  },
+  {
+    "_id": "62b851579a55c4aafe089fb6",
+    "filename": "20190102_092041_000",
+    "filepath": "201901/02/20190102_092041_000.jpg",
+    "datetime": "2019-01-02T08:20:00",
+    "timename": "morning",
+    "minute_id": "20190102_0920",
+    "day": 2,
+    "month": 1,
+    "year": 2019,
+    "date": "20190102",
+    "weekday": "wednesday",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        "-6.6752757",
+        "53.1906097"
+      ]
+    },
+    "altitude": -6.6752757,
+    "places": [
+      {
+        "place": "balcony/interior",
+        "score": 0.24897532165050507
+      }
+    ],
+    "concepts": [
+      {
+        "concept": "medicine_chest",
+        "score": 0.36010709404945374
+      },
+      {
+        "concept": "window_screen",
+        "score": 0.21148191392421722
+      }
+    ],
+    "objects": [],
+    "texts": [],
+    "mscaption": "a window with a building in the background",
+    "heart_rate": 97.0,
+    "reduced": false,
+    "time_zone": "Europe/Dublin",
+    "local_time": "20190102_0920",
+    "l2dist": 22.49025423811766
+  },
+  {
+    "_id": "62b851579a55c4aafe089fb7",
+    "filename": "20190102_092113_000",
+    "filepath": "201901/02/20190102_092113_000.jpg",
+    "datetime": "2019-01-02T08:21:00",
+    "timename": "morning",
+    "minute_id": "20190102_0921",
+    "day": 2,
+    "month": 1,
+    "year": 2019,
+    "date": "20190102",
+    "weekday": "wednesday",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        "-6.6753176",
+        "53.1906086"
+      ]
+    },
+    "altitude": -6.6753176,
+    "places": [
+      {
+        "place": "hospital_room",
+        "score": 0.2141522914171219
+      },
+      {
+        "place": "hotel_room",
+        "score": 0.21238139271736145
+      }
+    ],
+    "concepts": [
+      {
+        "concept": "home_theater",
+        "score": 0.37810218334198
+      }
+    ],
+    "objects": [
+      {
+        "object": "bed",
+        "score": 0.5307326912879944,
+        "bbox": [
+          "573",
+          "1022",
+          "583",
+          "767"
+        ]
+      },
+      {
+        "object": "couch",
+        "score": 0.42263662815093994,
+        "bbox": [
+          "570",
+          "1020",
+          "583",
+          "765"
+        ]
+      },
+      {
+        "object": "person",
+        "score": 0.2689515948295593,
+        "bbox": [
+          "0",
+          "113",
+          "630",
+          "766"
+        ]
+      }
+    ],
+    "texts": [],
+    "mscaption": "a room with a couch and a chair",
+    "heart_rate": 107.0,
+    "reduced": false,
+    "time_zone": "Europe/Dublin",
+    "local_time": "20190102_0921",
+    "semanticname": "Killashee House Hotel Leisure Centre",
+    "l2dist": 19.339066954327667
+  },
+  {
+    "_id": "62b851579a55c4aafe089fb8",
+    "filename": "20190102_092217_000",
+    "filepath": "201901/02/20190102_092217_000.jpg",
+    "datetime": "2019-01-02T08:22:00",
+    "timename": "morning",
+    "minute_id": "20190102_0922",
+    "day": 2,
+    "month": 1,
+    "year": 2019,
+    "date": "20190102",
+    "weekday": "wednesday",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        "-6.6753213",
+        "53.190603"
+      ]
+    },
+    "altitude": -6.6753213,
+    "places": [
+      {
+        "place": "corridor",
+        "score": 0.4216235876083374
+      }
+    ],
+    "concepts": [],
+    "objects": [
+      {
+        "object": "chair",
+        "score": 0.3797682821750641,
+        "bbox": [
+          "432",
+          "529",
+          "281",
+          "382"
+        ]
+      },
+      {
+        "object": "bed",
+        "score": 0.29211002588272095,
+        "bbox": [
+          "409",
+          "593",
+          "452",
+          "605"
+        ]
+      }
+    ],
+    "texts": [],
+    "mscaption": "a hallway with a mirror",
+    "heart_rate": 95.0,
+    "reduced": false,
+    "time_zone": "Europe/Dublin",
+    "local_time": "20190102_0922",
+    "l2dist": 16.500708764342228
+  },
+  {
+    "_id": "62b851579a55c4aafe089fb9",
+    "filename": "20190102_092249_000",
+    "filepath": "201901/02/20190102_092249_000.jpg",
+    "datetime": "2019-01-02T08:22:00",
+    "timename": "morning",
+    "minute_id": "20190102_0922",
+    "day": 2,
+    "month": 1,
+    "year": 2019,
+    "date": "20190102",
+    "weekday": "wednesday",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        "-6.6753213",
+        "53.190603"
+      ]
+    },
+    "altitude": -6.6753213,
+    "places": [],
+    "concepts": [],
+    "objects": [
+      {
+        "object": "person",
+        "score": 0.857914924621582,
+        "bbox": [
+          "584",
+          "915",
+          "241",
+          "765"
+        ]
+      },
+      {
+        "object": "remote",
+        "score": 0.5870077013969421,
+        "bbox": [
+          "725",
+          "802",
+          "460",
+          "538"
+        ]
+      }
+    ],
+    "texts": [],
+    "mscaption": "a person playing video games",
+    "heart_rate": 95.0,
+    "reduced": false,
+    "time_zone": "Europe/Dublin",
+    "local_time": "20190102_0922",
+    "l2dist": 15.456689250756467
+  },
+  {
+    "_id": "62b851579a55c4aafe089fba",
+    "filename": "20190102_092321_000",
+    "filepath": "201901/02/20190102_092321_000.jpg",
+    "datetime": "2019-01-02T08:23:00",
+    "timename": "morning",
+    "minute_id": "20190102_0923",
+    "day": 2,
+    "month": 1,
+    "year": 2019,
+    "date": "20190102",
+    "weekday": "wednesday",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        "-6.6754002",
+        "53.1906233"
+      ]
+    },
+    "altitude": -6.6754002,
+    "places": [],
+    "concepts": [
+      {
+        "concept": "restaurant",
+        "score": 0.4356653690338135
+      }
+    ],
+    "objects": [
+      {
+        "object": "person",
+        "score": 0.7777753472328186,
+        "bbox": [
+          "0",
+          "100",
+          "2",
+          "755"
+        ]
+      },
+      {
+        "object": "dining_table",
+        "score": 0.49930843710899353,
+        "bbox": [
+          "83",
+          "208",
+          "476",
+          "623"
+        ]
+      },
+      {
+        "object": "chair",
+        "score": 0.4768582284450531,
+        "bbox": [
+          "40",
+          "106",
+          "540",
+          "733"
+        ]
+      },
+      {
+        "object": "couch",
+        "score": 0.4333421289920807,
+        "bbox": [
+          "233",
+          "410",
+          "445",
+          "668"
+        ]
+      },
+      {
+        "object": "suitcase",
+        "score": 0.37526026368141174,
+        "bbox": [
+          "279",
+          "416",
+          "650",
+          "766"
+        ]
+      }
+    ],
+    "texts": [],
+    "mscaption": "a room with a desk and a window",
+    "heart_rate": 99.0,
+    "reduced": true,
+    "time_zone": "Europe/Dublin",
+    "local_time": "20190102_0923",
+    "semanticname": "Killashee House Hotel Leisure Centre",
+    "l2dist": 17.87739227608862
+  },
+  {
+    "_id": "62b851579a55c4aafe089fbb",
+    "filename": "20190102_092353_000",
+    "filepath": "201901/02/20190102_092353_000.jpg",
+    "datetime": "2019-01-02T08:23:00",
+    "timename": "morning",
+    "minute_id": "20190102_0923",
+    "day": 2,
+    "month": 1,
+    "year": 2019,
+    "date": "20190102",
+    "weekday": "wednesday",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        "-6.6754002",
+        "53.1906233"
+      ]
+    },
+    "altitude": -6.6754002,
+    "places": [
+      {
+        "place": "basement",
+        "score": 0.2616831064224243
+      }
+    ],
+    "concepts": [],
+    "objects": [],
+    "texts": [],
+    "mscaption": "a blurry picture of a light",
+    "heart_rate": 99.0,
+    "reduced": false,
+    "time_zone": "Europe/Dublin",
+    "local_time": "20190102_0923",
+    "semanticname": "Killashee House Hotel Leisure Centre",
+    "l2dist": 17.645852278769777
+  },
+  {
+    "_id": "62b851579a55c4aafe089fbc",
+    "filename": "20190102_092425_000",
+    "filepath": "201901/02/20190102_092425_000.jpg",
+    "datetime": "2019-01-02T08:24:00",
+    "timename": "morning",
+    "minute_id": "20190102_0924",
+    "day": 2,
+    "month": 1,
+    "year": 2019,
+    "date": "20190102",
+    "weekday": "wednesday",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        "-6.6753226",
+        "53.1906121"
+      ]
+    },
+    "altitude": -6.6753226,
+    "places": [
+      {
+        "place": "sky",
+        "score": 0.5400724411010742
+      }
+    ],
+    "concepts": [],
+    "objects": [],
+    "texts": [],
+    "mscaption": "a white surface with a light",
+    "heart_rate": 104.0,
+    "reduced": true,
+    "time_zone": "Europe/Dublin",
+    "local_time": "20190102_0924",
+    "semanticname": "Killashee House Hotel Leisure Centre",
+    "l2dist": 14.154614726155488
+  }
+]

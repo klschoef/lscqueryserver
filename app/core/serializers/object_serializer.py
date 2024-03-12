@@ -27,7 +27,7 @@ class ObjectSerializer:
     @staticmethod
     def object_to_serialized_json(obj):
         if not isinstance(obj, dict):
-            return json.dumps(ObjectSerializer.serialize_value(obj))
+            return obj
 
         for key, value in obj.items():
            obj[key] = ObjectSerializer.serialize_value(value)

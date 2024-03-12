@@ -9,11 +9,19 @@ from core.serializers.object_serializer import ObjectSerializer
 
 
 class Client:
-    def __init__(self, db_connection, websocket, path, connection_id=uuid.uuid4()):
+    def __init__(self, db_connection, websocket, path, connection_id=str(uuid.uuid4())):
         self.db = db_connection
         self.websocket = websocket
         self.path = path
         self.connection_id = connection_id
+        print("Connecting to clip websocket ...")
+        self.clip_websocket = None
+        print("Clip websocket connected")
+
+    async def get_clip_websocket(self):
+        if self.clip_websocket is None:
+            self.clip_websocket = await websockets.connect("ws://cloud6.itec.aau.at:8003")
+        return self.clip_websocket
 
     async def handle(self):
         while True:
@@ -23,7 +31,8 @@ class Client:
     async def handle_message(self, message):
         print(f"Received message {message} for client {self.connection_id} on path {self.path}")
         message = json.loads(message)
-        # {"source":"appcomponent","content":{"type":"textquery","clientId":"direct","query":"-o person","maxresults":2000,"resultsperpage":56,"selectedpage":"1","queryMode":"all"}}
+        message["clientId"] = self.connection_id
+
         if message.get('source') == "appcomponent":
             content = message.get('content')
             if content:
@@ -31,11 +40,19 @@ class Client:
                     query = content.get('query')
                     if query:
                         print(f"Received query {query}")
+                        clip_websocket = await self.get_clip_websocket()
+                        # First check if there is any CLIP Search
+                        await clip_websocket.send(json.dumps(message))
+                        clip_response = await clip_websocket.recv()
+                        clip_response = json.loads(clip_response)
+                        # If CLIP Search is needed, do the clip search, and fetch the image paths
+                        # Do also pagination
+
                         selected_page = int(content.get('selectedpage', 1))
                         results_per_page = int(content.get('resultsperpage', 20))
                         skip = (selected_page - 1) * results_per_page
                         images = self.db['images'].find({}, {"filepath": 1}).skip(skip).limit(results_per_page)
-                        #self.db['images'].find({'year': 2020})[:10]
+                        # self.db['images'].find({'year': 2020})[:10]
                         result = {"num": 0, "totalresults": 0, "results": [image.get('filepath') for image in images]}
                         print(f"send result {result}")
                         await self.websocket.send(json.dumps(result))
@@ -44,21 +61,21 @@ class Client:
                 elif content.get('type') == "metadataquery":
                     result = {"type": "metadata", "num": 1, "totalresults": 1, "results": []}
                     images = self.db['images'].find({"filepath": content.get('imagepath')})
-                    # replace the id, which is a idObject to string, to make it serializable
+                    # make all fields serializable
                     result['results'] = ObjectSerializer.objects_to_serialized_json(images)
 
                     print(f"send result {result}")
                     await self.websocket.send(json.dumps(result))
-                else:
+                else:  # TODO: add logic for objects, concepts, places and texts like in server.js lines from 264
                     print(f"Unknown content type {content.get('type')}")
         else:
             print(f"Unknown source type {message.get('source')}")
+
 
 class Server:
     def __init__(self):
         print("try to connect to mongodb...")
         self.client = MongoClient('mongodb://extreme00.itec.aau.at:27017')
-        print("connected to mongodb")
         self.db = self.client['lsc']
 
     async def handler(self, websocket, path):
@@ -67,14 +84,13 @@ class Server:
         await client.handle()
 
     def start(self):
-        print("Starting server")
+        print("Starting server ...")
         start_server = websockets.serve(self.handler, '', 8080)
 
-        print("Server started")
         asyncio.get_event_loop().run_until_complete(start_server)
-        print("Server run until complete")
+        print("Server started")
         asyncio.get_event_loop().run_forever()
-        print("Server run forever")
+
 
 if __name__ == "__main__":
     server = Server()
