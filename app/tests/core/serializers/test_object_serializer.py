@@ -6,13 +6,12 @@ from pathlib import Path
 from bson import ObjectId
 
 from core.serializers.object_serializer import ObjectSerializer
+from tests.mock_data.mock_loader import MockLoader
 
 
 class TestObjectSerializer(unittest.TestCase):
     def setUp(self):
-        first_10_images_all_fields_path = (Path(__file__).parent.parent.parent/"mock_data"/"mongo_responses"/"first_10_images_all_fields.json")
-        with open(first_10_images_all_fields_path, 'r') as file:
-            self.data = json.load(file)
+        self.data = MockLoader.load("mongo_responses/first_10_images_all_fields.json")
 
     def test_serialize_value(self):
         # Test serialization of datetime
