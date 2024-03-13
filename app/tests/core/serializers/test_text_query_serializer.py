@@ -17,3 +17,9 @@ class TestTextQquerySerializer(unittest.TestCase):
         self.assertEqual(query_dict.get("objects")[0].get("query"), "person", "The first object should be 'person'")
         self.assertEqual(query_dict.get("heart_rate").get("min"), 85, "The heart rate should be 85")
         self.assertEqual(query_dict.get("heart_rate").get("max"), 95, "The heart rate should be 95")
+
+    def test_text_query_to_dict_clip(self):
+        query_dict = TextQuerySerializer.text_query_to_dict("red car with person -o person,car")
+        self.assertEqual(query_dict.get("clip"), "red car with person", "The clip should be 'red car with person'")
+        self.assertEqual(query_dict.get("objects")[0].get("query"), "person", "The first object should be 'person'")
+        self.assertEqual(query_dict.get("objects")[1].get("query"), "car", "The second object should be 'car'")

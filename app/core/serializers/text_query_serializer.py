@@ -15,7 +15,8 @@ class TextQuerySerializer:
             "year": None,
             "month": None,
             "day": None,
-            "weekday": None
+            "weekday": None,
+            "heart_rate": None,
         }
 
         # apply filters to get the query_dict from the text query

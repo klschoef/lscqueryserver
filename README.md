@@ -36,11 +36,20 @@ Each Query String can be converted to a dictionary with query_parts and subqueri
             "query": "Portugal"
         }
     ],
+    "locations": [
+        {
+            "query": "12.23,23.23"
+        }
+    ],
     "filename": "image.jpg",
     "year": "2020",
     "month": "12",
     "day": "01",
     "weekday": "sunday",
+    "heart_rate": {
+        "min": 60,
+        "max": 80
+    },
 }
 ```
 
