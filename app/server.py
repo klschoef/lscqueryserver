@@ -6,6 +6,7 @@ from pymongo import MongoClient
 import json
 
 from core.serializers.object_serializer import ObjectSerializer
+from core.serializers.text_query_serializer import TextQuerySerializer
 
 
 class Client:
@@ -40,20 +41,66 @@ class Client:
                     query = content.get('query')
                     if query:
                         print(f"Received query {query}")
-                        clip_websocket = await self.get_clip_websocket()
-                        # First check if there is any CLIP Search
-                        await clip_websocket.send(json.dumps(message))
-                        clip_response = await clip_websocket.recv()
-                        clip_response = json.loads(clip_response)
+                        query_dict = TextQuerySerializer.text_query_to_dict(query)
+
+                        clip_response = None
+
+                        if query_dict.get("clip"): # First check if there is any CLIP Search
+                            clip_websocket = await self.get_clip_websocket()
+                            await clip_websocket.send(json.dumps(message))
+                            clip_response = await clip_websocket.recv()
+                            clip_response = json.loads(clip_response)
+
                         # If CLIP Search is needed, do the clip search, and fetch the image paths
                         # Do also pagination
+
+                        mongo_query = {}
+
+                        # TODO: outsource this logic to seperate classes (transformer, with a subtransform to mongodb)
+                        if query_dict.get("objects"):
+                            object_queries = []
+                            for object_query in query_dict.get("objects"):
+                                and_query = {
+                                    "object": object_query.get("query"),
+                                }
+                                # TODO: outsource subquery transformation to seperate class
+                                if object_query.get("subqueries"):
+                                    for key, sub_query in object_query.get("subqueries").items():
+                                        if key == "score":
+                                            and_query["score"] = {
+                                                "$gte": sub_query.get("min"),
+                                                "$lte": sub_query.get("max")
+                                            }
+                                        if key == "position":
+                                            # need for another precalculated field, because now we probably have bbox [top-left-x, top-left-y, width, height].
+                                            # But to check if the bbox is in one range of the image, we need the 4 corners of the bbox
+                                            # We also can use aggregate and add a field, but it's probably better to use a precalculated field
+                                            # We also should add the width and height of the image to the image object
+
+                                            # Another (maybe better approach) is to directly precalculate the position of the bbox within the image, and store it in the object like the bbox.
+                                            # value array like [bottom-left, top-left] etc.
+                                            # TODO: Clear these two options with the team
+                                            pass
+
+
+                                object_queries.append({
+                                    "objects": {
+                                        "$elemMatch": and_query
+                                    }
+                                })
+
+                            mongo_query["$and"] = object_queries
+
 
                         selected_page = int(content.get('selectedpage', 1))
                         results_per_page = int(content.get('resultsperpage', 20))
                         skip = (selected_page - 1) * results_per_page
-                        images = self.db['images'].find({}, {"filepath": 1}).skip(skip).limit(results_per_page)
+                        images = self.db['images'].find(mongo_query, {"filepath": 1}).skip(skip).limit(results_per_page)
+                        results = [image.get('filepath') for image in images]
                         # self.db['images'].find({'year': 2020})[:10]
-                        result = {"num": 0, "totalresults": 0, "results": [image.get('filepath') for image in images]}
+                        # list(self.db['images'].find({"objects": {"$elemMatch": {"object": "person", "score": {"$gte": 0.4, "$lte": 0.5}}}}).limit(10))[1]
+                        # list(self.db['images'].find({"$and": [{"objects": {"$elemMatch": {"object": "person"}}}, {"objects": {"$elemMatch": {"object": "car"}}}]}).limit(10))[1]
+                        result = {"num": len(results), "totalresults": 0, "results": results}
                         print(f"send result {result}")
                         await self.websocket.send(json.dumps(result))
                     else:
