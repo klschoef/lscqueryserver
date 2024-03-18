@@ -8,5 +8,4 @@ default_filters = [
     FilterTexts(),
     FilterHeartRate(),
     FilterClip(),
-
 ]
