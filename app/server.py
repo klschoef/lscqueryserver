@@ -39,6 +39,7 @@ class Client:
         if message.get('source') == "appcomponent":
             content = message.get('content')
             if content:
+                version = content.get("version", 1)
                 if content.get('type') == "textquery":
                     query = content.get('query')
                     if query:
@@ -65,11 +66,16 @@ class Client:
                         selected_page = int(content.get('selectedpage', 1))
                         results_per_page = int(content.get('resultsperpage', 20))
                         skip = (selected_page - 1) * results_per_page
-                        images = self.db['images'].find(mongo_query, {"filepath": 1}).skip(skip).limit(results_per_page)
+                        total_results = self.db['images'].count_documents(mongo_query)
+                        images = self.db['images'].find(mongo_query, {"filepath": 1, "datetime": 1, "heart_rate": 1}).skip(skip).limit(results_per_page)
+
+                        if version >= 2:
+                            results = ObjectSerializer.objects_to_serialized_json(list(images))
+                        else:
+                            results = [image.get('filepath') for image in images]
 
                         # build result object
-                        results = [image.get('filepath') for image in images]
-                        result = {"num": len(results), "totalresults": 2000, "results": results}
+                        result = {"num": len(results), "totalresults": total_results, "results": results}
                         print(f"send result {result}")
                         await self.websocket.send(json.dumps(result))
                     else:
@@ -98,8 +104,9 @@ class Client:
                     texts = self.db["texts"].find({}, {"name": 1}).sort({"name": 1})
                     texts = ObjectSerializer.objects_to_serialized_json(texts)
                     await self.websocket.send(json.dumps({"type": "texts", "num": len(texts), "results": texts}))
-                else:  # TODO: add logic for objects, concepts, places and texts like in server.js lines from 264
+                else:
                     print(f"Unknown content type {content.get('type')}")
+                    await self.websocket.send(json.dumps({"type": "error", "error": "unknown content type"}))
         else:
             print(f"Unknown source type {message.get('source')}")
 

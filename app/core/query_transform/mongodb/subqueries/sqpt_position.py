@@ -14,5 +14,5 @@ class SQPTPosition(SubQueryPartTransformerBase):
 
         # Another (maybe better approach) is to directly precalculate the position of the bbox within the image, and store it in the object like the bbox.
         # value array like [bottom-left, top-left] etc.
-        # TODO: Clear these two options with the team
+        # TODO: Clear these two options with the team (we choosed the second option)
         pass
