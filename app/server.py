@@ -94,7 +94,7 @@ class Client:
 
                         # build result object
                         result = {"num": len(results), "totalresults": total_results, "results": results, "debug_info": debug_info}
-                        print(f"send result {result} CHANGE!!!")
+                        print(f"send result {result}")
                         await self.websocket.send(json.dumps(result))
                     else:
                         print("No query found in content")
