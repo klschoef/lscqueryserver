@@ -5,7 +5,7 @@ class QPTHeartRate(QueryPartTransformerBase):
     def should_use(self, query_dict):
         return bool(query_dict.get("heart_rate"))
 
-    def transform(self, result_object, query_dict, *args, **kwargs):
+    def transform(self, result_object, query_dict, debug_info, *args, **kwargs):
         heart_rate = query_dict.get("heart_rate")
         result_object["heart_rate"] = {}
         if heart_rate.get("min"):

@@ -7,7 +7,7 @@ class QPTObjects(QueryPartTransformerBase):
     def should_use(self, query_dict):
         return bool(query_dict.get("objects"))
 
-    def transform(self, result_object, query_dict, *args, **kwargs):
+    def transform(self, result_object, query_dict, debug_info, *args, **kwargs):
         object_queries = []
         for object_query in query_dict.get("objects"):
             and_query = {

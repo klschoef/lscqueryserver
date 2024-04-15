@@ -21,4 +21,4 @@ class FilterClip(FilterBase):
 
     def add_to_dict(self, query, query_dict):
         query = re.sub(FilterClip.REGEX, "", query).strip()
-        query_dict["clip"] = query
+        query_dict["clip"] = {"query": query, "subqueries": {}}

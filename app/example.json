@@ -1,0 +1,21 @@
+{
+  "query_name": "LSC22-108",
+  "hints": [
+    "I was praying to small golden Buddha",
+    "I was praying to small golden Buddha in a tunnel.",
+    "I was praying to small golden Buddha in a tunnel. There were plants and offerings around the Buddha.",
+    "I was praying to small golden Buddha in a tunnel. There were plants and offerings around the Buddha. It was inside of a tourist park with a large ornamental tower.",
+    "I was praying to small golden Buddha in a tunnel. There were plants and offerings around the Buddha. It was inside of a tourist park with a large ornamental tower. It was in September 2019",
+    "I was praying to small golden Buddha in a tunnel. There were plants and offerings around the Buddha. It was inside of a tourist park with a large ornamental tower. It was in September 2019 in Thailand."
+  ],
+  "answers": [
+    "20191011_052810_000",
+    "20191011_052827_000",
+    "20191011_052844_000",
+    "20191011_052901_000",
+    "20191011_052918_000",
+    "20191011_052935_000",
+    "20191011_052954_000",
+    "20191011_053011_000"
+  ]
+}

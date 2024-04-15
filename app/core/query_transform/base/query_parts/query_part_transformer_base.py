@@ -20,7 +20,7 @@ class QueryPartTransformerBase(ABC):
     """
 
     @abstractmethod
-    def transform(self, result_object, query_dict, *args, **kwargs):
+    def transform(self, result_object, query_dict, debug_info, *args, **kwargs):
         pass
 
     """

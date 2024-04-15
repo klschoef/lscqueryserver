@@ -19,6 +19,7 @@ class Client:
         self.connection_id = connection_id
         print("Connecting to clip websocket ...")
         self.clip_websocket = None
+        self.cached_clip_result = None
         print("Clip websocket connected")
 
     async def get_clip_websocket(self):
@@ -42,14 +43,31 @@ class Client:
                 version = content.get("version", 1)
                 if content.get('type') == "textquery":
                     query = content.get('query')
-                    if query:
+                    debug_info = {}
+                    query_dicts = content.get("query_dicts")
+                    if query or query_dicts:
                         print(f"Received query {query}")
-                        query_dict = TextQuerySerializer.text_query_to_dict(query)
+                        if not query_dicts:
+                            query_dict = TextQuerySerializer.text_query_to_dict(query)
+                        else:
+                            query_dict = query_dicts[0] # TODO: add temporary support
                         mongo_query = {}
+
+                        selected_page = int(content.get('selectedpage', 1))
+                        results_per_page = int(content.get('resultsperpage', 20))
+                        skip = (selected_page - 1) * results_per_page
+                        if selected_page == 1:
+                            self.cached_clip_result = None
 
                         # build the mongo query
                         for transformer in default_mongodb_query_part_transformers:
                             if transformer.should_use(query_dict):
+                                if transformer.__class__.__name__ == "QPTClip" and self.cached_clip_result:
+                                    if "$and" not in mongo_query:
+                                        mongo_query["$and"] = []
+                                    mongo_query["$and"].append(self.cached_clip_result)
+                                    break
+
                                 kwargs = {}
                                 needed_kwargs = transformer.needed_kwargs()
                                 if "clip_websocket" in needed_kwargs:
@@ -58,14 +76,14 @@ class Client:
                                     kwargs["message"] = message
 
                                 if inspect.iscoroutinefunction(transformer.transform):
-                                    await transformer.transform(mongo_query, query_dict, **kwargs)
+                                    await transformer.transform(mongo_query, query_dict, debug_info, **kwargs)
                                 else:
-                                    transformer.transform(mongo_query, query_dict, **kwargs)
+                                    transformer.transform(mongo_query, query_dict, debug_info,  **kwargs)
+
+                                if transformer.__class__.__name__ == "QPTClip" and mongo_query.get("$and"):
+                                    self.cached_clip_result = mongo_query.get("$and")[-1]
 
                         # execute the mongo query with pagination
-                        selected_page = int(content.get('selectedpage', 1))
-                        results_per_page = int(content.get('resultsperpage', 20))
-                        skip = (selected_page - 1) * results_per_page
                         total_results = self.db['images'].count_documents(mongo_query)
                         images = self.db['images'].find(mongo_query, {"filepath": 1, "datetime": 1, "heart_rate": 1}).skip(skip).limit(results_per_page)
 
@@ -75,8 +93,8 @@ class Client:
                             results = [image.get('filepath') for image in images]
 
                         # build result object
-                        result = {"num": len(results), "totalresults": total_results, "results": results}
-                        print(f"send result {result}")
+                        result = {"num": len(results), "totalresults": total_results, "results": results, "debug_info": debug_info}
+                        print(f"send result {result} CHANGE!!!")
                         await self.websocket.send(json.dumps(result))
                     else:
                         print("No query found in content")
