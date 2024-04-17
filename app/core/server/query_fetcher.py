@@ -5,6 +5,7 @@ from core.query_transform.default_mongodb_query_part_transformers import default
 
 class QueryFetcher:
 
+    @staticmethod
     def transform_to_mongo_query(query_dict, message, get_clip_websocket):
         for transformer in default_mongodb_query_part_transformers:
             if transformer.should_use(query_dict):

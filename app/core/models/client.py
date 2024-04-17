@@ -15,7 +15,7 @@ class Client:
         self.path = path
         self.connection_id = connection_id
         self.clip_connection = ClipConnection(self)
-        self.cached_clip_result = None
+        self.cached_results = {}
 
     async def handle(self):
         while True:
@@ -24,9 +24,9 @@ class Client:
 
     async def handle_message(self, message):
         print(f"Received message {message} for client {self.connection_id} on path {self.path}")
-        message = json.loads(message)
-        message["clientId"] = self.connection_id
         client_request = ClientRequest(message)
+        message = client_request.message
+        message["clientId"] = self.connection_id
         await self.send_progress_step(f"Parsing message {client_request.content.get('type')} ...")
 
         if client_request.source == "appcomponent":

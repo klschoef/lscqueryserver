@@ -1,4 +1,6 @@
+import hashlib
 import inspect
+import json
 
 from core.message_handlers.base.message_base import MessageBase
 from core.query_transform.default_mongodb_query_part_transformers import default_mongodb_query_part_transformers
@@ -13,6 +15,8 @@ class MessageQuery(MessageBase):
         query = client_request.content.get('query')
         debug_info = {}
         query_dicts = client_request.content.get("query_dicts")
+        hash_json_string = json.dumps({"query_dicts": query_dicts, "query": query}, sort_keys=True)
+        query_request_hash = hashlib.sha256(hash_json_string.encode()).hexdigest()
         if query or query_dicts:
             print(f"Received query {query}")
             if not query_dicts:
@@ -24,13 +28,18 @@ class MessageQuery(MessageBase):
             selected_page = int(client_request.content.get('selectedpage', 1))
             results_per_page = int(client_request.content.get('resultsperpage', 20))
             skip = (selected_page - 1) * results_per_page
-            if selected_page == 1:
-                client.cached_clip_result = None
+
+            # check if the query is the same (then we can use caching, because just the page is different)
+            if query_request_hash not in client.cached_results:
+                client.cached_results = {query_request_hash: True}
 
             images = []
             total_results = 0
 
             for query_dict in query_dicts:
+                # generate the query_hash for caching purposes
+                query_dict_json_string = json.dumps(query_dict, sort_keys=True)
+                query_hash = hashlib.sha256(query_dict_json_string.encode()).hexdigest()
                 # build the mongo query
                 # TODO: outsource the transformer logic
                 # TODO: outsource the logic, to get images out of an query_dict
@@ -45,10 +54,11 @@ class MessageQuery(MessageBase):
                 """
                 for transformer in default_mongodb_query_part_transformers:
                     if transformer.should_use(query_dict):
-                        if transformer.__class__.__name__ == "QPTClip" and client.cached_clip_result:
+                        cache_key = f"{client.connection_id}_{query_hash}_{transformer.__class__.__name__}"
+                        if transformer.__class__.__name__ == "QPTClip" and cache_key in client.cached_results:
                             if "$and" not in mongo_query:
                                 mongo_query["$and"] = []
-                            mongo_query["$and"].append(client.cached_clip_result)
+                            mongo_query["$and"].append(client.cached_results.get(cache_key))
                             break
 
                         kwargs = {}
@@ -68,7 +78,7 @@ class MessageQuery(MessageBase):
                             transformer.transform(mongo_query, query_dict, debug_info,  **kwargs)
 
                         if transformer.__class__.__name__ == "QPTClip" and mongo_query.get("$and"):
-                            client.cached_clip_result = mongo_query.get("$and")[-1]
+                            client.cached_results[cache_key] = mongo_query.get("$and")[-1]
 
                 # execute the mongo query with pagination
                 total_results = client.db['images'].count_documents(mongo_query)
