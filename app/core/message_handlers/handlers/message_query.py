@@ -1,10 +1,7 @@
-import hashlib
-import inspect
-import json
-
 from core.message_handlers.base.message_base import MessageBase
-from core.query_transform.default_mongodb_query_part_transformers import default_mongodb_query_part_transformers
 from core.serializers.text_query_serializer import TextQuerySerializer
+from core.server.query_fetcher import QueryFetcher
+from core.utils.hash_util import HashUtil
 
 
 class MessageQuery(MessageBase):
@@ -15,15 +12,12 @@ class MessageQuery(MessageBase):
         query = client_request.content.get('query')
         debug_info = {}
         query_dicts = client_request.content.get("query_dicts")
-        hash_json_string = json.dumps({"query_dicts": query_dicts, "query": query}, sort_keys=True)
-        query_request_hash = hashlib.sha256(hash_json_string.encode()).hexdigest()
+        query_request_hash = HashUtil.hash_dict({"query_dicts": query_dicts, "query": query})
         if query or query_dicts:
             print(f"Received query {query}")
             if not query_dicts:
                 # TODO: add support for getting temporal queries (to get an array of query_dicts)
                 query_dicts = [TextQuerySerializer.text_query_to_dict(query)]
-
-            mongo_query = {}
 
             selected_page = int(client_request.content.get('selectedpage', 1))
             results_per_page = int(client_request.content.get('resultsperpage', 20))
@@ -36,10 +30,13 @@ class MessageQuery(MessageBase):
             images = []
             total_results = 0
 
+            # TODO: First fetch the last query_dict query_dicts[-1]
+
+            # TODO: Iterate through the results
+            # TODO: Fetch the next query_dict on the same day (string field), but before the first one (time field) (the nearest to the last one)
+            # TODO: Do this until end, then end it to the results
+
             for query_dict in query_dicts:
-                # generate the query_hash for caching purposes
-                query_dict_json_string = json.dumps(query_dict, sort_keys=True)
-                query_hash = hashlib.sha256(query_dict_json_string.encode()).hexdigest()
                 # build the mongo query
                 # TODO: outsource the transformer logic
                 # TODO: outsource the logic, to get images out of an query_dict
@@ -52,33 +49,7 @@ class MessageQuery(MessageBase):
                 Erste Seite wird gecheckt. Danach nächste Query. Nächste Query nur das näheste Result wird verwendet (prüfen).
                 Oder einfach jedes einzelne Result durchgehen? Dann kann genau geprüft werden, aber mehr DB Requests.
                 """
-                for transformer in default_mongodb_query_part_transformers:
-                    if transformer.should_use(query_dict):
-                        cache_key = f"{client.connection_id}_{query_hash}_{transformer.__class__.__name__}"
-                        if transformer.__class__.__name__ == "QPTClip" and cache_key in client.cached_results:
-                            if "$and" not in mongo_query:
-                                mongo_query["$and"] = []
-                            mongo_query["$and"].append(client.cached_results.get(cache_key))
-                            break
-
-                        kwargs = {}
-                        needed_kwargs = transformer.needed_kwargs()
-                        if "clip_websocket" in needed_kwargs:
-                            kwargs["clip_websocket"] = await client.clip_connection.get_clip_websocket()
-                        if "clip_connection" in needed_kwargs:
-                            kwargs["clip_connection"] = client.clip_connection
-                        if "message" in needed_kwargs:
-                            kwargs["message"] = client_request.message
-                        if "client" in needed_kwargs:
-                            kwargs["client"] = client
-
-                        if inspect.iscoroutinefunction(transformer.transform):
-                            await transformer.transform(mongo_query, query_dict, debug_info, **kwargs)
-                        else:
-                            transformer.transform(mongo_query, query_dict, debug_info,  **kwargs)
-
-                        if transformer.__class__.__name__ == "QPTClip" and mongo_query.get("$and"):
-                            client.cached_results[cache_key] = mongo_query.get("$and")[-1]
+                mongo_query = await QueryFetcher.transform_to_mongo_query(query_dict, client, client_request, debug_info)
 
                 # execute the mongo query with pagination
                 total_results = client.db['images'].count_documents(mongo_query)

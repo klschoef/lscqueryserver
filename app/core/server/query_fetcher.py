@@ -1,26 +1,34 @@
 import inspect
 
 from core.query_transform.default_mongodb_query_part_transformers import default_mongodb_query_part_transformers
+from core.utils.hash_util import HashUtil
 
 
 class QueryFetcher:
 
     @staticmethod
-    def transform_to_mongo_query(query_dict, message, get_clip_websocket):
+    async def transform_to_mongo_query(query_dict, client, client_request, debug_info):
+        mongo_query = {}
+        query_hash = HashUtil.hash_dict(query_dict)
         for transformer in default_mongodb_query_part_transformers:
             if transformer.should_use(query_dict):
-                if transformer.__class__.__name__ == "QPTClip" and self.cached_clip_result:
+                cache_key = f"{client.connection_id}_{query_hash}_{transformer.__class__.__name__}"
+                if transformer.__class__.__name__ == "QPTClip" and cache_key in client.cached_results:
                     if "$and" not in mongo_query:
                         mongo_query["$and"] = []
-                    mongo_query["$and"].append(self.cached_clip_result)
+                    mongo_query["$and"].append(client.cached_results.get(cache_key))
                     break
 
                 kwargs = {}
                 needed_kwargs = transformer.needed_kwargs()
                 if "clip_websocket" in needed_kwargs:
-                    kwargs["clip_websocket"] = await get_clip_websocket()
+                    kwargs["clip_websocket"] = await client.clip_connection.get_clip_websocket()
+                if "clip_connection" in needed_kwargs:
+                    kwargs["clip_connection"] = client.clip_connection
                 if "message" in needed_kwargs:
-                    kwargs["message"] = message
+                    kwargs["message"] = client_request.message
+                if "client" in needed_kwargs:
+                    kwargs["client"] = client
 
                 if inspect.iscoroutinefunction(transformer.transform):
                     await transformer.transform(mongo_query, query_dict, debug_info, **kwargs)
@@ -28,7 +36,8 @@ class QueryFetcher:
                     transformer.transform(mongo_query, query_dict, debug_info,  **kwargs)
 
                 if transformer.__class__.__name__ == "QPTClip" and mongo_query.get("$and"):
-                    self.cached_clip_result = mongo_query.get("$and")[-1]
+                    client.cached_results[cache_key] = mongo_query.get("$and")[-1]
+        return mongo_query
 
     def fetch(self, query_dict):
         pass
