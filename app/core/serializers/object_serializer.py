@@ -26,6 +26,8 @@ class ObjectSerializer:
 
     @staticmethod
     def object_to_serialized_json(obj):
+        if isinstance(obj, list):
+            return ObjectSerializer.objects_to_serialized_json(obj)
         if not isinstance(obj, dict):
             return obj
 
@@ -35,4 +37,8 @@ class ObjectSerializer:
 
     @staticmethod
     def objects_to_serialized_json(objects):
+        if isinstance(objects, dict):
+            return ObjectSerializer.object_to_serialized_json(objects)
+        if not isinstance(objects, list):
+            return objects
         return [ObjectSerializer.object_to_serialized_json(obj) for obj in objects]
