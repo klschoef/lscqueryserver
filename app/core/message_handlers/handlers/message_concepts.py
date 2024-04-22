@@ -6,6 +6,6 @@ class MessageConcepts(MessageBase):
     def should_handle(self, client_request):
         return client_request.type == "concepts"
 
-    def handle(self, client_request, client):
+    async def handle(self, client_request, client):
         concepts = client.db["concepts"].find({}, {"name": 1}).sort({"name": 1})
         return {"type": "concepts", "num": len(concepts), "results": concepts}

@@ -16,5 +16,5 @@ class MessageBase(ABC):
     input: client_request: ClientRequest, client: Client
     """
     @abstractmethod
-    def handle(self, client_request, client):
+    async def handle(self, client_request, client):
         pass
