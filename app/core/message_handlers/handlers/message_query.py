@@ -29,6 +29,9 @@ class MessageQuery(MessageBase):
             if query_request_hash not in client.cached_results:
                 client.cached_results = {query_request_hash: True}
 
+            if len(query_dicts) == 1:
+                return await self.handle_single_query(query_dicts[0], client_request, client, skip, results_per_page, debug_info)
+
             return await self.handle_temporal_query(query_dicts, client_request, client, skip, results_per_page, debug_info)
 
             # build result object
@@ -36,8 +39,15 @@ class MessageQuery(MessageBase):
         else:
             print("No query found in content")
 
-    async def handle_single_query(self, query_dict, client_request, client):
-        pass
+    async def handle_single_query(self, query_dict, client_request, client, skip, results_per_page, debug_info):
+        mongo_query = await QueryFetcher.transform_to_mongo_query(query_dict, client, client_request, debug_info)
+        total_results = client.db['images'].count_documents(mongo_query)
+        images = client.db['images'].find(mongo_query, {"filepath": 1, "datetime": 1, "heart_rate": 1}).limit(results_per_page).skip(skip)
+        if client_request.version >= 2:
+            results = list(images)
+        else:
+            results = [image.get('filepath') for image in images]
+        return {"num": len(results), "totalresults": total_results, "results": results, "requestId": client_request.content.get("requestId")}
 
     async def handle_temporal_query(self, query_dicts, client_request, client, skip, results_per_page, debug_info):
         # TODO: First fetch the last query_dict query_dicts[-1]
@@ -114,4 +124,4 @@ class MessageQuery(MessageBase):
             else:
                 results = [image.get('filepath') for image in result_images]
 
-        return {"num": len(results), "totalresults": total_results, "results": results, "debug_info": debug_info}
+        return {"num": len(results), "totalresults": total_results, "results": results, "debug_info": debug_info, "requestId": client_request.content.get("requestId")}
