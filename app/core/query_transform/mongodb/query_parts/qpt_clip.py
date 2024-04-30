@@ -16,12 +16,12 @@ class QPTClip(QueryPartTransformerBase):
         client = kwargs.get("client")
 
         # fetch amount of variants from the variants subquery
-        variants_amount = int(query_dict.get("clip").get("subqueries", {}).get("variants", "1"))
+        variants_amount = int(query_dict.get("clip").get("subqueries", {}).get("variants", "0"))
         variant_results = []
         queries = [query_dict.get("clip").get("query")]
         api_key = settings.GPT_API_KEY
 
-        if variants_amount > 1 and api_key:
+        if variants_amount > 0 and api_key:
             # Do GPT variants generation
             await client.send_progress_step("Generating clip variants ...")
             queries += ClipVariantsUtil.fetch_variants(api_key, queries[0], variants_amount)
@@ -36,15 +36,24 @@ class QPTClip(QueryPartTransformerBase):
         await client.send_progress_step("Combine Clip ...")
         # Transform the results
         common_results = []
+        scores = []
         first_results = variant_results[0]
         for filename in first_results:
             skip = False
+            score = 0
             for v_result in variant_results[1:]:
-               if filename not in v_result:
-                   skip = True
-                   break
+                try:
+                    index = v_result.index(filename)
+                    score += index
+                except ValueError:
+                    skip = True
+                    break
             if not skip:
                 common_results.append(filename)
+                scores.append(score)
+
+        # Sort the results by the scores
+        common_results = [x for _, x in sorted(zip(scores, common_results))]
 
         mongo_query = {"filepath": {"$in": common_results}}
 

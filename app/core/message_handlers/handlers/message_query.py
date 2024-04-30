@@ -17,9 +17,8 @@ class MessageQuery(MessageBase):
         query_request_hash = HashUtil.hash_dict({"query_dicts": query_dicts, "query": query})
         if query or query_dicts:
             print(f"Received query {query}")
-            if not query_dicts:
-                # TODO: add support for getting temporal queries (to get an array of query_dicts)
-                query_dicts = [TextQuerySerializer.text_query_to_dict(query)]
+            if query:
+                query_dicts = [TextQuerySerializer.text_query_to_dict(qd.strip()) for qd in query.split("<")]
 
             selected_page = int(client_request.content.get('selectedpage', 1))
             results_per_page = int(client_request.content.get('resultsperpage', 20))
@@ -42,12 +41,14 @@ class MessageQuery(MessageBase):
     async def handle_single_query(self, query_dict, client_request, client, skip, results_per_page, debug_info):
         mongo_query = await QueryFetcher.transform_to_mongo_query(query_dict, client, client_request, debug_info)
         total_results = client.db['images'].count_documents(mongo_query)
-        images = client.db['images'].find(mongo_query, {"filepath": 1, "datetime": 1, "heart_rate": 1}).limit(results_per_page).skip(skip)
+
+        images = client.db['images'].aggregate(self.generate_mongo_pipeline(mongo_query, skip, results_per_page))
+
         if client_request.version >= 2:
             results = list(images)
         else:
             results = [image.get('filepath') for image in images]
-        return {"num": len(results), "totalresults": total_results, "results": results, "requestId": client_request.content.get("requestId")}
+        return {"num": len(results), "totalresults": total_results, "results": results, "debug_info": debug_info, "requestId": client_request.content.get("requestId")}
 
     async def handle_temporal_query(self, query_dicts, client_request, client, skip, results_per_page, debug_info):
         # TODO: First fetch the last query_dict query_dicts[-1]
@@ -55,21 +56,8 @@ class MessageQuery(MessageBase):
         mongo_query = await QueryFetcher.transform_to_mongo_query(query_dicts[-1], client, client_request, debug_info)
         total_results = client.db['images'].count_documents(mongo_query)
         # images = client.db['images'].find(mongo_query, {"filepath": 1, "datetime": 1, "heart_rate": 1, "date": 1}).skip(skip).limit(results_per_page)
-        images = client.db['images'].aggregate([
-            {"$match": mongo_query},
-            {
-                "$sort": {"datetime": DESCENDING}  # Sort documents by datetime in descending order
-            },
-            {"$group": {
-                "_id": "$date",
-                "filepath": {"$first": "$filepath"},
-                "datetime": {"$first": "$datetime"},
-                "heart_rate": {"$first": "$heart_rate"}
-            }},
-            {"$project": {"_id": 0, "date": "$_id", "filepath": 1, "datetime": 1, "heart_rate": 1}},
-            {"$skip": skip},
-            {"$limit": results_per_page}
-        ])
+        images = client.db['images'].aggregate(self.generate_mongo_pipeline(mongo_query, skip, results_per_page, group_by_date=True))
+
         if len(query_dicts) == 1:
             if client_request.version >= 2:
                 results = list(images)
@@ -125,3 +113,42 @@ class MessageQuery(MessageBase):
                 results = [image.get('filepath') for image in result_images]
 
         return {"num": len(results), "totalresults": total_results, "results": results, "debug_info": debug_info, "requestId": client_request.content.get("requestId")}
+
+    def generate_mongo_pipeline(self, mongo_query, skip, results_per_page, group_by_date=False):
+        aggregate_pipeline = [
+            {"$match": mongo_query},
+        ]
+        # add sorting to the pipeline, that we have the sort of the clip order, if we have a clip request, otherwise use just the datetime
+        # TODO: add support for sorting by object score, text score, etc. (Maybe sorting by the first on in the list?)
+        if mongo_query.get("$and") and mongo_query.get("$and")[0].get("filepath"):
+            aggregate_pipeline.extend([
+                {"$addFields": {
+                    "sortOrder": {
+                        "$indexOfArray": [
+                            mongo_query.get("$and")[0].get("filepath").get("$in"),
+                            "$filepath"
+                        ]
+                    }
+                }},
+                {"$sort": {"sortOrder": 1}}
+            ])
+        else:
+            aggregate_pipeline.append({"$sort": {"datetime": DESCENDING}})
+
+        if group_by_date:
+            aggregate_pipeline.extend([
+                {"$group": {
+                    "_id": "$date",
+                    "filepath": {"$first": "$filepath"},
+                    "datetime": {"$first": "$datetime"},
+                    "heart_rate": {"$first": "$heart_rate"}
+                }}
+            ])
+
+        aggregate_pipeline.extend([
+            {"$project": {"_id": 0, "date": "$_id", "filepath": 1, "datetime": 1, "heart_rate": 1}},
+            {"$skip": skip},
+            {"$limit": results_per_page}
+        ])
+
+        return aggregate_pipeline

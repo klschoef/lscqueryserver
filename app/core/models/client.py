@@ -9,11 +9,13 @@ from core.serializers.object_serializer import ObjectSerializer
 
 
 class Client:
-    def __init__(self, db_connection, websocket, path, connection_id=str(uuid.uuid4())):
+    def __init__(self, db_connection, websocket, path, connection_id=None):
         self.db = db_connection
         self.websocket = websocket
         self.path = path
         self.connection_id = connection_id
+        if not self.connection_id:
+            self.connection_id = str(uuid.uuid4())
         self.clip_connection = ClipConnection(self)
         self.cached_results = {}
 
@@ -59,11 +61,13 @@ class Client:
     """
 
     async def send_error(self, error):
-        await self.websocket.send(json.dumps({"type": "error", "error": error}))
+        if self.websocket:
+            await self.websocket.send(json.dumps({"type": "error", "error": error}))
 
     """
     Send a process step like 'loading data' etc. to the client
     """
 
     async def send_progress_step(self, message):
-        await self.websocket.send(json.dumps({"type": "progress", "message": message}))
+        if self.websocket:
+            await self.websocket.send(json.dumps({"type": "progress", "message": message}))

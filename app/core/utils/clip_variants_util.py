@@ -8,10 +8,7 @@ class ClipVariantsUtil:
         r = GPTUtil.request([
             {
                 "role": "system",
-                "content": "Please rewrite and restructure the given input. Use the same style of language,"
-                           " use simple words and keep the sentences short. "
-                           "Shorter is better. Only use the relevant information. "
-                           "You also can use just keywords"
+                "content": "Reformulate this description, use a different wording."
                            "Just output the rewritten part in one line without any additional information. "
                            f"Do it {amount} times, each variant in a new line"
             },

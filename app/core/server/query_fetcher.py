@@ -17,7 +17,7 @@ class QueryFetcher:
                     if "$and" not in mongo_query:
                         mongo_query["$and"] = []
                     mongo_query["$and"].append(client.cached_results.get(cache_key))
-                    break
+                    continue
 
                 kwargs = {}
                 needed_kwargs = transformer.needed_kwargs()
