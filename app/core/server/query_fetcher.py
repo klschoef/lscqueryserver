@@ -8,7 +8,7 @@ class QueryFetcher:
 
     @staticmethod
     async def transform_to_mongo_query(query_dict, client, client_request, debug_info):
-        mongo_query = {}
+        mongo_query = {"$and": []}
         query_hash = HashUtil.hash_dict(query_dict)
         for transformer in default_mongodb_query_part_transformers:
             if transformer.should_use(query_dict):

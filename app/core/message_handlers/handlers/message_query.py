@@ -42,7 +42,14 @@ class MessageQuery(MessageBase):
         mongo_query = await QueryFetcher.transform_to_mongo_query(query_dict, client, client_request, debug_info)
         total_results = client.db['images'].count_documents(mongo_query)
 
-        images = client.db['images'].aggregate(self.generate_mongo_pipeline(mongo_query, skip, results_per_page))
+        query_mode = client_request.content.get("queryMode", "All Images")
+        l2dist = client_request.content.get("l2dist", 10 if query_mode == "distinctive" else (15 if query_mode == "moredistinctive" else None)) # query_mode query for backwards compatibility
+        first_per_day = client_request.content.get("firstPerDay", query_mode == "first") # query_mode == first for backwards compatibility
+
+        if l2dist:
+            mongo_query["$and"].append({"l2dist": {"$gt": l2dist}})
+
+        images = client.db['images'].aggregate(self.generate_mongo_pipeline(mongo_query, skip, results_per_page, group_by_date=first_per_day))
 
         if client_request.version >= 2:
             results = list(images)
