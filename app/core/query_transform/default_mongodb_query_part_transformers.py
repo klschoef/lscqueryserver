@@ -1,7 +1,12 @@
+from core.query_transform.mongodb.query_parts.qpt_address import QPTAddress
 from core.query_transform.mongodb.query_parts.qpt_clip import QPTClip
 from core.query_transform.mongodb.query_parts.qpt_concepts import QPTConcepts
+from core.query_transform.mongodb.query_parts.qpt_country import QPTCountry
 from core.query_transform.mongodb.query_parts.qpt_day import QPTDay
 from core.query_transform.mongodb.query_parts.qpt_filename import QPTFilename
+from core.query_transform.mongodb.query_parts.qpt_gpt import QPTGPT
+from core.query_transform.mongodb.query_parts.qpt_gptr import QPTGPTR
+from core.query_transform.mongodb.query_parts.qpt_gptra import QPTGPTRA
 from core.query_transform.mongodb.query_parts.qpt_heart_rate import QPTHeartRate
 from core.query_transform.mongodb.query_parts.qpt_month import QPTMonth
 from core.query_transform.mongodb.query_parts.qpt_objects import QPTObjects
@@ -22,5 +27,9 @@ default_mongodb_query_part_transformers = [
     QPTMonth(),
     QPTDay(),
     QPTWeekday(),
-    # cityname and countryname
+    QPTAddress(),
+    QPTCountry(),
+    QPTGPTR(),
+    QPTGPTRA(),
+    QPTGPT()
 ]

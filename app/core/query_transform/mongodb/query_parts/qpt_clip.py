@@ -1,6 +1,7 @@
 from core import settings
 from core.query_transform.base.query_parts.query_part_transformer_base import QueryPartTransformerBase
 from core.utils.clip_variants_util import ClipVariantsUtil
+import copy
 
 class QPTClip(QueryPartTransformerBase):
 
@@ -12,7 +13,8 @@ class QPTClip(QueryPartTransformerBase):
 
     async def transform(self, result_object, query_dict, debug_info, *args, **kwargs):
         clip_connection = kwargs.get("clip_connection")
-        message = kwargs.get("message")
+        message = copy.deepcopy(kwargs.get("message"))
+        message.get("content")["selectedpage"] = "1"
         client = kwargs.get("client")
 
         # fetch amount of variants from the variants subquery

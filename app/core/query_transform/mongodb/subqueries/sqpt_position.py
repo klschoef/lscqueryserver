@@ -15,4 +15,9 @@ class SQPTPosition(SubQueryPartTransformerBase):
         # Another (maybe better approach) is to directly precalculate the position of the bbox within the image, and store it in the object like the bbox.
         # value array like [bottom-left, top-left] etc.
         # TODO: Clear these two options with the team (we choosed the second option)
-        pass
+        result_object["positions"] = {}
+        positions = [r.strip() for r in sub_query.split(",")]
+        notpositions = [p[1:] for p in positions if p.startswith("-")]
+        positions = [p for p in positions if not p.startswith("-")]
+        result_object["positions"]["$all"] = positions
+        result_object["positions"]["$nin"] = notpositions
