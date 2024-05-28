@@ -153,7 +153,7 @@ class MessageQuery(MessageBase):
             ])
 
         aggregate_pipeline.extend([
-            {"$project": {"_id": 0, "date": "$_id", "filepath": 1, "datetime": 1, "heart_rate": 1}},
+            {"$project": {"_id": 0, "date": "$_id", "filepath": 1, "filename": 1, "datetime": 1, "heart_rate": 1}},
             {"$skip": skip},
             {"$limit": results_per_page}
         ])

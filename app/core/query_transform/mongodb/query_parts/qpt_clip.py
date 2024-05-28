@@ -55,7 +55,8 @@ class QPTClip(QueryPartTransformerBase):
                 scores.append(score)
 
         # Sort the results by the scores
-        common_results = [x for _, x in sorted(zip(scores, common_results))]
+        if len(variant_results) > 1:
+            common_results = [x for _, x in sorted(zip(scores, common_results))]
 
         mongo_query = {"filepath": {"$in": common_results}}
 
