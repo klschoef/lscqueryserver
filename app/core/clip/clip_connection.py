@@ -2,6 +2,9 @@ import json
 
 import websockets
 
+from core import settings
+
+
 class ClipResponse:
 
     def __init__(self, results, remote_response=None):
@@ -23,7 +26,7 @@ class ClipConnection:
 
     async def get_clip_websocket(self):
         if self.clip_websocket is None:
-            self.clip_websocket = await websockets.connect("ws://cloud6.itec.aau.at:8003")
+            self.clip_websocket = await websockets.connect(settings.CLIP_URL)
         return self.clip_websocket
 
     async def query(self, query, message, results_per_page=None, max_results=None):

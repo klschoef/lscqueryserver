@@ -1,6 +1,37 @@
 # LSC Query Server
 
+## Requirements
+- GPT-API Key
+- Running MongoDB with existing LSC Database (from backup)
+- Running Clip Python Server (from divexploreanalysis repo - faiss/makeIndexLSCopenclip.py script)
+- Solr Backup Folder
+
 ## Setup
+0. Install docker
+   https://docs.docker.com/engine/install/
+
+1. Copy and adjust env files
+
+```
+cp .env.example .env
+cp app/.env.example app/.env
+```
+
+If you run any system (like solr, mongodb or clip) locally on the system, be aware to not use "localhost", because the docker container would use the container localhost.
+Use "host.docker.internal" instead of localhost. 
+Example: instead of "http://localhost:8983/solr/mycore" use "http://host.docker.internal:8983/solr/mycore"
+
+2. Start the solr server (make sure to copy the solr folder from the backup to ./solrdata)
+
+```
+docker compose -f docker-compose-solr.yml up
+```
+
+3. Start the lsc server
+
+```
+docker compose up
+```
 
 ## Documentation
 
