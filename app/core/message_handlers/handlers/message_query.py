@@ -1,4 +1,4 @@
-from pymongo import DESCENDING
+from pymongo import DESCENDING, ASCENDING
 
 from core.message_handlers.base.message_base import MessageBase
 from core.serializers.text_query_serializer import TextQuerySerializer
@@ -49,7 +49,7 @@ class MessageQuery(MessageBase):
         if l2dist:
             mongo_query["$and"].append({"l2dist": {"$gt": l2dist}})
 
-        images = client.db['images'].aggregate(self.generate_mongo_pipeline(mongo_query, skip, results_per_page, group_by_date=first_per_day))
+        images = client.db['images'].aggregate(self.generate_mongo_pipeline(mongo_query, skip, results_per_page, group_by_date=first_per_day, client_request=client_request))
 
         if client_request.version >= 2:
             results = list(images)
@@ -63,7 +63,7 @@ class MessageQuery(MessageBase):
         mongo_query = await QueryFetcher.transform_to_mongo_query(query_dicts[-1], client, client_request, debug_info)
         total_results = client.db['images'].count_documents(mongo_query)
         # images = client.db['images'].find(mongo_query, {"filepath": 1, "datetime": 1, "heart_rate": 1, "date": 1}).skip(skip).limit(results_per_page)
-        images = client.db['images'].aggregate(self.generate_mongo_pipeline(mongo_query, skip, results_per_page, group_by_date=True))
+        images = client.db['images'].aggregate(self.generate_mongo_pipeline(mongo_query, skip, results_per_page, group_by_date=True, client_request=client_request))
 
         if len(query_dicts) == 1:
             if client_request.version >= 2:
@@ -121,7 +121,7 @@ class MessageQuery(MessageBase):
 
         return {"num": len(results), "totalresults": total_results, "results": results, "debug_info": debug_info, "requestId": client_request.content.get("requestId")}
 
-    def generate_mongo_pipeline(self, mongo_query, skip, results_per_page, group_by_date=False):
+    def generate_mongo_pipeline(self, mongo_query, skip, results_per_page, group_by_date=False, client_request=None):
         aggregate_pipeline = [
             {"$match": mongo_query},
         ]
@@ -139,6 +139,9 @@ class MessageQuery(MessageBase):
                 }},
                 {"$sort": {"sortOrder": 1}}
             ])
+        elif client_request and client_request.content and client_request.content.get("sorting"):
+            sorting = client_request.content.get("sorting")
+            aggregate_pipeline.append({"$sort": {sorting.get("field"): ASCENDING if sorting.get("order") == "asc" else DESCENDING}})
         else:
             aggregate_pipeline.append({"$sort": {"datetime": DESCENDING}})
 
