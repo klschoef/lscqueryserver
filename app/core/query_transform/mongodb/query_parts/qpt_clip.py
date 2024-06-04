@@ -31,7 +31,8 @@ class QPTClip(QueryPartTransformerBase):
 
         for query in queries:
             await client.send_progress_step(f"Query Clip with '{query}' ...")
-            clip_response = await clip_connection.query(query, message, 5000, 5000)
+            clip_page_size = message.get("content").get("clipPageSize") or 5000
+            clip_response = await clip_connection.query(query, message, clip_page_size, clip_page_size)
             if clip_response.results:
                 variant_results.append(clip_response.results)
 

@@ -24,7 +24,7 @@ Example: instead of "http://localhost:8983/solr/mycore" use "http://host.docker.
 2. Start the solr server (make sure to copy the solr folder from the backup to ./solrdata)
 
 ```
-docker compose -f docker-compose-solr.yml up
+docker compose -f docker-compose.solr.yml up
 ```
 
 3. Start the lsc server
