@@ -5,15 +5,15 @@ from core.query.utils.filter_util import FilterUtil
 from core.query.utils.range_value_util import RangeValueUtil
 
 
-class FilterHeartRate(FilterBase):
+class FilterHour(FilterBase):
     """
     Logic to transform the query part to a dictionary and add it to the query_dict
     """
 
     def add_to_dict(self, query, query_dict, query_parts):
-        if "h" in query_parts:
-            min_val, max_val = RangeValueUtil.parse_range_values(query_parts.get("h"))
-            query_dict["heart_rate"] = {
+        if "hr" in query_parts:
+            min_val, max_val = RangeValueUtil.parse_range_values(query_parts.get("hr"))
+            query_dict["hour"] = {
                 "min": min_val,
                 "max": max_val
             }

@@ -20,6 +20,24 @@ class FilterUtil:
     """
 
     @staticmethod
+    def get_query_and_subqueries(query_parts, key):
+        object_raw_parts = [p.strip() for p in query_parts.get(key).split(" ") if p != '']
+        objects = []
+        for raw_object in object_raw_parts:
+            query_and_subqueries = raw_object.split("|")
+            object = {
+                "query": query_and_subqueries[0],
+                "subqueries": {}
+            }
+
+            for sub in query_and_subqueries[1:]:
+                key, value = SubfilterHandler.subfilter_handler(sub)
+                object["subqueries"][key] = value
+
+            objects.append(object)
+        return objects
+
+    @staticmethod
     def parse_query_parts(query, prefix):
         # example query string: -o car|score:0.5+-0.1|position:left-bottom,car|score:0.4
 

@@ -9,6 +9,7 @@ from core.query_transform.mongodb.query_parts.qpt_gpt import QPTGPT
 from core.query_transform.mongodb.query_parts.qpt_gptr import QPTGPTR
 from core.query_transform.mongodb.query_parts.qpt_gptra import QPTGPTRA
 from core.query_transform.mongodb.query_parts.qpt_heart_rate import QPTHeartRate
+from core.query_transform.mongodb.query_parts.qpt_hour import QPTHour
 from core.query_transform.mongodb.query_parts.qpt_month import QPTMonth
 from core.query_transform.mongodb.query_parts.qpt_objects import QPTObjects
 from core.query_transform.mongodb.query_parts.qpt_places import QPTPlaces
@@ -33,5 +34,6 @@ default_mongodb_query_part_transformers = [
     QPTGPTR(),
     QPTGPTRA(),
     QPTGPT(),
-    QPTClipSimilarity()
+    QPTClipSimilarity(),
+    QPTHour()
 ]
