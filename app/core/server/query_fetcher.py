@@ -37,6 +37,9 @@ class QueryFetcher:
 
                 if transformer.__class__.__name__ == "QPTClip" and mongo_query.get("$and"):
                     client.cached_results[cache_key] = mongo_query.get("$and")[-1]
+
+        if len(mongo_query["$and"]) == 0:
+            del mongo_query["$and"]
         return mongo_query
 
     def fetch(self, query_dict):
