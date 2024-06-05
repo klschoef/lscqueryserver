@@ -29,18 +29,18 @@ class ClipConnection:
             self.clip_websocket = await websockets.connect(settings.CLIP_URL)
         return self.clip_websocket
 
-    async def query(self, query, message, results_per_page=None, max_results=None):
+    async def query(self, query, message, results_per_page=None, max_results=None, event_type=None, pathprefix=None):
         if self.use_local_clip:
-            return self.query_local(query, message, results_per_page, max_results)
+            return self.query_local(query, message, results_per_page, max_results, event_type, pathprefix)
         else:
-            return await self.query_remote(query, message, results_per_page, max_results)
+            return await self.query_remote(query, message, results_per_page, max_results, event_type, pathprefix)
 
-    def query_local(self, query, message, results_per_page=None, max_results=None):
+    def query_local(self, query, message, results_per_page=None, max_results=None, event_type=None, pathprefix=None):
         # TODO: add logic for local clip (the whole message is not needed in that case,
         # just the query and the pagination from message)
         pass
 
-    async def query_remote(self, query, message, results_per_page=None, max_results=None):
+    async def query_remote(self, query, message, results_per_page=None, max_results=None, event_type=None, pathprefix=None):
         # store the old values
         old_results_per_page = message.get("content").get("resultsperpage")
         old_max_results = message.get("content").get("maxresults")
@@ -50,6 +50,13 @@ class ClipConnection:
             message.get("content")["resultsperpage"] = results_per_page
         if max_results:
             message.get("content")["maxresults"] = max_results
+
+        # change event_type if required
+        if event_type:
+            message.get("content")["type"] = event_type
+
+        if pathprefix is not None:
+            message.get("content")["pathprefix"] = pathprefix
 
         # do the clip request
         clip_websocket = await self.get_clip_websocket()

@@ -1,5 +1,6 @@
 from core.query_transform.mongodb.query_parts.qpt_address import QPTAddress
 from core.query_transform.mongodb.query_parts.qpt_clip import QPTClip
+from core.query_transform.mongodb.query_parts.qpt_clip_similarity import QPTClipSimilarity
 from core.query_transform.mongodb.query_parts.qpt_concepts import QPTConcepts
 from core.query_transform.mongodb.query_parts.qpt_country import QPTCountry
 from core.query_transform.mongodb.query_parts.qpt_day import QPTDay
@@ -31,5 +32,6 @@ default_mongodb_query_part_transformers = [
     QPTCountry(),
     QPTGPTR(),
     QPTGPTRA(),
-    QPTGPT()
+    QPTGPT(),
+    QPTClipSimilarity()
 ]
