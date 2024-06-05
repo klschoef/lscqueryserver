@@ -13,30 +13,43 @@ class QPTGPT(QueryPartTransformerBase):
     def needed_kwargs(self):
         return ["message"]
 
+    def parse_weighted_terms(self, search_term):
+        terms = search_term.split()
+        include_terms = []
+        exclude_terms = []
+
+        for term in terms:
+            if term.startswith("!"):
+                exclude_terms.append(term[1:])
+            elif ":" in term:
+                word, weight = term.split(":")
+                include_terms.append((word, float(weight)))
+            else:
+                include_terms.append((term, 1.0))
+
+        return include_terms, exclude_terms
+
     def transform(self, result_object, query_dict, debug_info, *args, **kwargs):
         search_term = query_dict.get("gpt").strip()
-        words = search_term.split(" ")
+        include_terms, exclude_terms = self.parse_weighted_terms(search_term)
 
-        # Identify inclusion and exclusion terms
-        include_words = [word for word in words if not word.startswith("!")]
-        exclude_words = [word[1:] for word in words if word.startswith("!")]
+        # Construct exact match and fuzzy match queries
+        exact_match_queries = [f'description:"{term}"^{weight}' for term, weight in include_terms]
+        fuzzy_match_queries = [f"description:{term}~0.7^{weight}" for term, weight in include_terms]
 
-        # Construct exact match phrase query with a boost
-        exact_match_query = f'description:"{" ".join(include_words)}"^2.0'
-
-        # Construct fuzzy match queries
-        fuzzy_terms = [f"description:{word}~0.7" for word in include_words]
-        fuzzy_match_query = " OR ".join(fuzzy_terms)
+        # Combine exact match and fuzzy match queries
+        exact_match_query = " OR ".join(exact_match_queries)
+        fuzzy_match_query = " OR ".join(fuzzy_match_queries)
 
         # Construct exclude queries
-        exclude_queries = [f"-description:{word}" for word in exclude_words]
+        exclude_queries = [f"-description:{term}" for term in exclude_terms]
         exclude_query = " AND ".join(exclude_queries)
 
-        # Combine exact match, fuzzy match, and exclude queries
+        # Combine all queries
         if exclude_query:
-            search_query = f"({exact_match_query} OR ({fuzzy_match_query})) AND {exclude_query}"
+            search_query = f"({exact_match_query} OR {fuzzy_match_query}) AND {exclude_query}"
         else:
-            search_query = f"({exact_match_query} OR ({fuzzy_match_query}))"
+            search_query = f"({exact_match_query} OR {fuzzy_match_query})"
 
         solr_url = settings.SOLR_URL
         message = kwargs.get("message")
@@ -51,4 +64,3 @@ class QPTGPT(QueryPartTransformerBase):
             result_object["$and"] = [mongo_query]
         else:
             result_object["$and"].append(mongo_query)
-
