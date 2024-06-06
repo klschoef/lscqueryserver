@@ -18,7 +18,7 @@ class MessageQuery(MessageBase):
         if query or query_dicts:
             print(f"Received query {query}")
             if query:
-                query_dicts = [TextQuerySerializer.text_query_to_dict(qd.strip()) for qd in query.split("<")]
+                query_dicts = [TextQuerySerializer.text_query_to_dict(qd.strip(), client_request) for qd in query.split("<")]
 
             selected_page = int(client_request.content.get('selectedpage', 1))
             results_per_page = int(client_request.content.get('resultsperpage', 20))

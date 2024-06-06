@@ -5,7 +5,7 @@ import re
 class TextQuerySerializer:
 
     @staticmethod
-    def text_query_to_dict(text_query, filters=default_filters):
+    def text_query_to_dict(text_query, client_request, filters=default_filters):
         query_dict = {
             "clip": None,
             "objects": [],
@@ -27,7 +27,7 @@ class TextQuerySerializer:
         clip_command = re.findall(r"^([^-]*)", text_query)
 
         if clip_command and len(clip_command) > 0:
-            commands["clip"] = clip_command[0].strip()
+            commands["gpt" if client_request.content.get("useGPTasDefault") else "clip"] = clip_command[0].strip()
 
         # apply filters to get the query_dict from the text query
         for current_filter in filters:
