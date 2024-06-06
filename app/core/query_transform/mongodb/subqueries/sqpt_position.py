@@ -17,7 +17,7 @@ class SQPTPosition(SubQueryPartTransformerBase):
         # TODO: Clear these two options with the team (we choosed the second option)
         result_object["positions"] = {}
         positions = [r.strip() for r in sub_query.split(",")]
-        notpositions = [p[1:] for p in positions if p.startswith("-")]
-        positions = [p for p in positions if not p.startswith("-")]
+        notpositions = [p[1:] for p in positions if p.startswith("!")]
+        positions = [p for p in positions if not p.startswith("!")]
         result_object["positions"]["$all"] = positions
         result_object["positions"]["$nin"] = notpositions
