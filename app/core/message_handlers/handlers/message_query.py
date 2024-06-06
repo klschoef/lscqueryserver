@@ -1,3 +1,5 @@
+import re
+
 from pymongo import DESCENDING, ASCENDING
 
 from core.message_handlers.base.message_base import MessageBase
@@ -58,7 +60,124 @@ class MessageQuery(MessageBase):
         return {"num": len(results), "totalresults": total_results, "results": results, "debug_info": debug_info, "requestId": client_request.content.get("requestId")}
 
     async def handle_temporal_query(self, query_dicts, client_request, client, skip, results_per_page, debug_info):
-        # TODO: First fetch the last query_dict query_dicts[-1]
+        # check if information from mongo is needed
+        no_mongo_query_required = True
+        for query_dict in query_dicts:
+            for key in query_dict.keys():
+                if key == "clip" or key == "gpt" \
+                        or query_dict.get(key) is None \
+                        or query_dict.get(key) == [] \
+                        or query_dict.get(key) == "":
+                    continue
+                no_mongo_query_required = False
+                break
+            if not no_mongo_query_required:
+                break
+
+        if no_mongo_query_required:
+            filenames_per_part = [
+                await QueryFetcher.transform_to_mongo_query(query_dict, client, client_request, debug_info)
+                for query_dict in query_dicts]
+            filenames_per_part = [m.get("$and", [])[0].get("filepath", {}).get("$in", []) for m in filenames_per_part if len(m.get("$and", [])) > 0]
+
+            date_time_regex = r".*\/.*\/([0-9]{8})_([0-9]{6})"
+            result_groups = []
+            filenames_per_part = [
+                [
+                    {
+                        "filename": p.get("filename"),
+                        "date": p.get("date_time")[0],
+                        "seconds_on_day": int(p.get("date_time")[1])
+                    }
+                    for p in [
+                        {
+                            "filename": part,
+                            "date_time": re.findall(date_time_regex, part)[0],
+                        } for part in part_objects]
+                ]
+                for part_objects in filenames_per_part
+            ]
+
+            block_counter = 1
+            part_counter = 1
+            amount_of_parts = len(filenames_per_part)
+            total_amount_results = len(filenames_per_part[-1])
+
+            for part in filenames_per_part[-1]:
+                await client.send_progress_step(f"Combine ({block_counter}/{total_amount_results}) ...")
+                block_counter += 1
+                if part.get("date") and part.get("seconds_on_day"):
+                    date = part.get("date")
+                    seconds_on_day = part.get("seconds_on_day")
+                    last_seconds_on_day = seconds_on_day # value from the last part
+                    result_group = [part]
+
+                    found = True
+
+                    # fetch other parts and compare
+                    for other_parts in reversed(filenames_per_part[:-1]):
+                        temp_seconds_on_day = None
+                        temp_part = None
+                        for other_part in other_parts:
+                            if other_part.get("date") and other_part.get("seconds_on_day"):
+                                o_date = other_part.get("date")
+                                o_seconds_on_day = other_part.get("seconds_on_day")
+
+                                # compare
+                                if date == o_date and o_seconds_on_day < last_seconds_on_day:
+                                    if not temp_seconds_on_day: # use it, if we have no other value
+                                        temp_seconds_on_day = o_seconds_on_day
+                                        temp_part = other_part
+                                    elif o_seconds_on_day > temp_seconds_on_day: # if we have a nearer value to the last one, use it
+                                        temp_seconds_on_day = o_seconds_on_day
+                                        temp_part = other_part
+                        if temp_seconds_on_day and temp_part:
+                            last_seconds_on_day = temp_seconds_on_day
+                            result_group.insert(0, temp_part)
+                        else:
+                            found = False
+                            break
+
+                    if found:
+                        result_groups.append(result_group)
+
+
+            # fetch the images
+            results = []
+            group_size = 0
+            if len(result_groups) > 0:
+                group_size = len(result_groups[0])
+                filenames = [item.get("filename") for sublist in result_groups for item in sublist]
+                paginated_filenames = filenames[skip:skip+results_per_page]
+                ungrouped_results = list(client.db['images'].aggregate(self.generate_mongo_pipeline({"$and": [{"filepath": {"$in": paginated_filenames}}]}, 0, results_per_page, client_request=client_request)))
+                total_results = len(filenames)
+                group = 0
+                group_count = 0
+                current_date = None
+                for result in paginated_filenames:
+                    r = [r for r in ungrouped_results if r.get("filepath") == result]
+                    if len(r) > 0:
+                        r = r[0].copy()
+                        datetime_string = r.get("filename")[:8]
+                        if group_count < group_size and (current_date is None or current_date == datetime_string):
+                            print(f"first")
+                            current_date = datetime_string
+                            r["group"] = group
+                            group_count += 1
+                        else:
+                            print(f"second")
+                            group += 1
+                            group_count = 1
+                            current_date = datetime_string
+                            r["group"] = group
+                        r["group_first"] = group_count == 1
+                        r["group_last"] = group_count == group_size
+                        results.append(r)
+
+
+            return {"num": len(results), "group_size": group_size, "totalresults": total_results, "results": results, "debug_info": debug_info, "requestId": client_request.content.get("requestId")}
+
+        # First fetch the last query_dict query_dicts[-1]
         await client.send_progress_step("Fetching first query ...")
         mongo_query = await QueryFetcher.transform_to_mongo_query(query_dicts[-1], client, client_request, debug_info)
         total_results = client.db['images'].count_documents(mongo_query)
@@ -71,12 +190,12 @@ class MessageQuery(MessageBase):
             else:
                 results = [image.get('filepath') for image in images]
         else:
-            # TODO: Iterate through the results
+            # Iterate through the results
             result_images = []
             for image in images:
                 await client.send_progress_step(f"Search on day {image.get('date')} ...")
-                # TODO: Fetch the next query_dict on the same day (string field), but before the first one (time field) (the nearest to the last one)
-                # TODO: Do this until end, then end it to the results
+                # Fetch the next query_dict on the same day (string field), but before the first one (time field) (the nearest to the last one)
+                # Do this until end, then end it to the results
                 nearest_image_on_same_day = image
                 invalid_image = False
                 found_images = [image]
