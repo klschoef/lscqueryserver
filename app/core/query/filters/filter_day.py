@@ -12,4 +12,8 @@ class FilterDay(FilterBase):
 
     def add_to_dict(self, query, query_dict, query_parts):
         if "d" in query_parts:
-            query_dict["day"] = query_parts.get("d")
+            min_val, max_val = RangeValueUtil.parse_range_values(query_parts.get("d"))
+            query_dict["day"] = {
+                "min": min_val,
+                "max": max_val
+            }

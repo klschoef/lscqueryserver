@@ -8,13 +8,9 @@ class QPTYear(QueryPartTransformerBase):
         return bool(query_dict.get("year"))
 
     def transform(self, result_object, query_dict, debug_info, *args, **kwargs):
-        try:
-            query = {"year": int(query_dict.get("year"))}
-        except ValueError:
-            print(f"Invalid year {query_dict.get('year')}")
-            return
-
-        if result_object.get("$and") is None:
-            result_object["$and"] = [query]
-        else:
-            result_object["$and"].append(query)
+        year = query_dict.get("year")
+        result_object["year"] = {}
+        if year.get("min"):
+            result_object["year"]["$gte"] = year.get("min")
+        if year.get("max"):
+            result_object["year"]["$lte"] = year.get("max")

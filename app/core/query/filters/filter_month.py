@@ -12,4 +12,8 @@ class FilterMonth(FilterBase):
 
     def add_to_dict(self, query, query_dict, query_parts):
         if "m" in query_parts:
-            query_dict["month"] = query_parts.get("m")
+            min_val, max_val = RangeValueUtil.parse_range_values(query_parts.get("m"))
+            query_dict["month"] = {
+                "min": min_val,
+                "max": max_val
+            }

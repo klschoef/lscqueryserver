@@ -8,13 +8,9 @@ class QPTMonth(QueryPartTransformerBase):
         return bool(query_dict.get("month"))
 
     def transform(self, result_object, query_dict, debug_info, *args, **kwargs):
-        try:
-            query = {"month": int(query_dict.get("month"))}
-        except ValueError:
-            print(f"Invalid month {query_dict.get('month')}")
-            return
-
-        if result_object.get("$and") is None:
-            result_object["$and"] = [query]
-        else:
-            result_object["$and"].append(query)
+        month = query_dict.get("month")
+        result_object["month"] = {}
+        if month.get("min"):
+            result_object["month"]["$gte"] = month.get("min")
+        if month.get("max"):
+            result_object["month"]["$lte"] = month.get("max")

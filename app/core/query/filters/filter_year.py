@@ -12,4 +12,8 @@ class FilterYear(FilterBase):
 
     def add_to_dict(self, query, query_dict, query_parts):
         if "y" in query_parts:
-            query_dict["year"] = query_parts.get("y")
+            min_val, max_val = RangeValueUtil.parse_range_values(query_parts.get("y"))
+            query_dict["year"] = {
+                "min": min_val,
+                "max": max_val
+            }

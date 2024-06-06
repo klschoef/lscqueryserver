@@ -8,13 +8,9 @@ class QPTDay(QueryPartTransformerBase):
         return bool(query_dict.get("day"))
 
     def transform(self, result_object, query_dict, debug_info, *args, **kwargs):
-        try:
-            query = {"day": int(query_dict.get("day"))}
-        except ValueError:
-            print(f"Invalid day {query_dict.get('day')}")
-            return
-
-        if result_object.get("$and") is None:
-            result_object["$and"] = [query]
-        else:
-            result_object["$and"].append(query)
+        day = query_dict.get("day")
+        result_object["day"] = {}
+        if day.get("min"):
+            result_object["day"]["$gte"] = day.get("min")
+        if day.get("max"):
+            result_object["day"]["$lte"] = day.get("max")
