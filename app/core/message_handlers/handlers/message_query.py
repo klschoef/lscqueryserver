@@ -99,47 +99,41 @@ class MessageQuery(MessageBase):
             ]
 
             block_counter = 1
-            part_counter = 1
-            amount_of_parts = len(filenames_per_part)
             total_amount_results = len(filenames_per_part[-1])
+            reversed_filenames = list(reversed(filenames_per_part))
 
-            for part in filenames_per_part[-1]:
+            for part in reversed_filenames[0]:
                 await client.send_progress_step(f"Combine ({block_counter}/{total_amount_results}) ...")
                 block_counter += 1
-                if part.get("date") and part.get("seconds_on_day"):
-                    date = part.get("date")
-                    seconds_on_day = part.get("seconds_on_day")
-                    last_seconds_on_day = seconds_on_day # value from the last part
-                    result_group = [part]
+                date = part.get("date")
+                seconds_on_day = part.get("seconds_on_day")
+                last_seconds_on_day = seconds_on_day # value from the last part
+                result_group = [part]
 
-                    found = True
+                found = True
 
-                    # fetch other parts and compare
-                    for other_parts in reversed(filenames_per_part[:-1]):
-                        temp_seconds_on_day = None
-                        temp_part = None
-                        for other_part in other_parts:
-                            if other_part.get("date") and other_part.get("seconds_on_day"):
-                                o_date = other_part.get("date")
-                                o_seconds_on_day = other_part.get("seconds_on_day")
+                # fetch other parts and compare
+                for other_parts in reversed_filenames[1:]:
+                    temp_seconds_on_day = None
+                    temp_part = None
+                    for other_part in other_parts:
+                        # compare
+                        if date == other_part.get("date") and other_part.get("seconds_on_day") < last_seconds_on_day:
+                            if not temp_seconds_on_day: # use it, if we have no other value
+                                temp_seconds_on_day = other_part.get("seconds_on_day")
+                                temp_part = other_part
+                            elif other_part.get("seconds_on_day") > temp_seconds_on_day: # if we have a nearer value to the last one, use it
+                                temp_seconds_on_day = other_part.get("seconds_on_day")
+                                temp_part = other_part
+                    if temp_seconds_on_day and temp_part:
+                        last_seconds_on_day = temp_seconds_on_day
+                        result_group.insert(0, temp_part)
+                    else:
+                        found = False
+                        break
 
-                                # compare
-                                if date == o_date and o_seconds_on_day < last_seconds_on_day:
-                                    if not temp_seconds_on_day: # use it, if we have no other value
-                                        temp_seconds_on_day = o_seconds_on_day
-                                        temp_part = other_part
-                                    elif o_seconds_on_day > temp_seconds_on_day: # if we have a nearer value to the last one, use it
-                                        temp_seconds_on_day = o_seconds_on_day
-                                        temp_part = other_part
-                        if temp_seconds_on_day and temp_part:
-                            last_seconds_on_day = temp_seconds_on_day
-                            result_group.insert(0, temp_part)
-                        else:
-                            found = False
-                            break
-
-                    if found:
-                        result_groups.append(result_group)
+                if found:
+                    result_groups.append(result_group)
 
 
             # fetch the images
@@ -202,17 +196,6 @@ class MessageQuery(MessageBase):
 
                 for query_dict in query_dicts[:-1]:
                     # build the mongo query
-                    # TODO: outsource the transformer logic
-                    # TODO: outsource the logic, to get images out of an query_dict
-                    # TODO: for filtering the previous queries. Maybe check if it's possible, that the datetime needs in an array of datetimes
-                    # TODO: or just the date string (better option)
-                    # TODO: first (timebased last) query is the first one, and defines the dates. The other queries needs to be on the same date.
-                    # TODO: check if time is lower after each round.
-                    """
-                    Option:
-                    Erste Seite wird gecheckt. Danach nächste Query. Nächste Query nur das näheste Result wird verwendet (prüfen).
-                    Oder einfach jedes einzelne Result durchgehen? Dann kann genau geprüft werden, aber mehr DB Requests.
-                    """
                     mongo_query = await QueryFetcher.transform_to_mongo_query(query_dict, client, client_request, debug_info)
 
                     if "$and" not in mongo_query:
@@ -231,7 +214,7 @@ class MessageQuery(MessageBase):
 
                 if not invalid_image:
                     #result_images.append(image)
-                    result_images.extend(found_images)
+                    result_images.extend(reversed(found_images))
 
             if client_request.version >= 2:
                 results = list(result_images)
