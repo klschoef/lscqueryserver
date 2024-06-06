@@ -101,9 +101,9 @@ class MessageQuery(MessageBase):
             block_counter = 1
             total_amount_results = len(filenames_per_part[-1])
             reversed_filenames = list(reversed(filenames_per_part))
-
             for part in reversed_filenames[0]:
-                await client.send_progress_step(f"Combine ({block_counter}/{total_amount_results}) ...")
+                if block_counter % 1000 == 0:
+                    await client.send_progress_step(f"Combine ({block_counter}/{total_amount_results}) ...")
                 block_counter += 1
                 date = part.get("date")
                 seconds_on_day = part.get("seconds_on_day")
@@ -135,7 +135,7 @@ class MessageQuery(MessageBase):
                 if found:
                     result_groups.append(result_group)
 
-
+            await client.send_progress_step(f"Start Fetching Process ...")
             # fetch the images
             results = []
             group_size = 0
