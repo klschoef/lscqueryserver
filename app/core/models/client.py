@@ -6,6 +6,7 @@ from core.exceptions.response_error import ResponseError
 from core.message_handlers.default_message_handlers import default_message_handlers
 from core.models.client_request import ClientRequest
 from core.serializers.object_serializer import ObjectSerializer
+from core.utils.log_util import LogUtil
 
 
 class Client:
@@ -26,6 +27,7 @@ class Client:
 
     async def handle_message(self, message):
         print(f"Received message {message} for client {self.connection_id} on path {self.path}")
+        LogUtil.write_to_queries_log(message)
         client_request = ClientRequest(message)
         message = client_request.message
         message["clientId"] = self.connection_id
