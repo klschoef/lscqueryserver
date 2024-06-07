@@ -80,8 +80,10 @@ class MessageQuery(MessageBase):
                 for query_dict in query_dicts]
             filenames_per_part = [m.get("$and", [])[0].get("filepath", {}).get("$in", []) for m in filenames_per_part if len(m.get("$and", [])) > 0]
 
+            first_per_day = client_request.content.get("firstPerDay")
             date_time_regex = r".*\/.*\/([0-9]{8})_([0-9]{6})"
             result_groups = []
+            included_days = []
             filenames_per_part = [
                 [
                     {
@@ -106,6 +108,10 @@ class MessageQuery(MessageBase):
                     await client.send_progress_step(f"Combine ({block_counter}/{total_amount_results}) ...")
                 block_counter += 1
                 date = part.get("date")
+
+                if first_per_day and date in included_days:
+                    continue
+
                 seconds_on_day = part.get("seconds_on_day")
                 last_seconds_on_day = seconds_on_day # value from the last part
                 result_group = [part]
@@ -134,6 +140,8 @@ class MessageQuery(MessageBase):
 
                 if found:
                     result_groups.append(result_group)
+                    if first_per_day:
+                        included_days.append(date)
 
             await client.send_progress_step(f"Start Fetching Process ...")
             # fetch the images
