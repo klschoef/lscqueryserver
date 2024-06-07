@@ -20,11 +20,11 @@ class TextQuerySerializer:
             "heart_rate": None,
         }
 
-        split_regex = r"(-([^\s]+)([^-]*))"
+        split_regex = r"(\/([^\s]+)([^\/]*))"
 
         commands = re.findall(split_regex, text_query)
         commands = {entry[1]:entry[2] for entry in commands if len(entry) > 2}
-        clip_command = re.findall(r"^([^-]*)", text_query)
+        clip_command = re.findall(r"^([^\/]*)", text_query)
 
         if clip_command and len(clip_command) > 0:
             commands["gpt" if client_request.content.get("useGPTasDefault") else "clip"] = clip_command[0].strip()
