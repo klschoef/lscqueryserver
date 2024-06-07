@@ -139,6 +139,7 @@ class MessageQuery(MessageBase):
             # fetch the images
             results = []
             group_size = 0
+            total_results = 0
             if len(result_groups) > 0:
                 group_size = len(result_groups[0])
                 filenames = [item.get("filename") for sublist in result_groups for item in sublist]
