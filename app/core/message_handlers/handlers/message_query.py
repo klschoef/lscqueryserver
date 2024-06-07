@@ -49,7 +49,7 @@ class MessageQuery(MessageBase):
         first_per_day = client_request.content.get("firstPerDay", query_mode == "first") # query_mode == first for backwards compatibility
 
         if l2dist:
-            mongo_query["$and"].append({"l2dist": {"$gt": l2dist}})
+            mongo_query["l2dist"] = {"$gt": l2dist}
 
         images = client.db['images'].aggregate(self.generate_mongo_pipeline(mongo_query, skip, results_per_page, group_by_date=first_per_day, client_request=client_request))
 
