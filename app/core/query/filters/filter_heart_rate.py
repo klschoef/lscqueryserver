@@ -11,8 +11,8 @@ class FilterHeartRate(FilterBase):
     """
 
     def add_to_dict(self, query, query_dict, query_parts):
-        if "h" in query_parts:
-            min_val, max_val = RangeValueUtil.parse_range_values(query_parts.get("h"))
+        if "hr" in query_parts:
+            min_val, max_val = RangeValueUtil.parse_range_values(query_parts.get("hr"))
             query_dict["heart_rate"] = {
                 "min": min_val,
                 "max": max_val

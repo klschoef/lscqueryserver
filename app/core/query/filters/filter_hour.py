@@ -11,8 +11,8 @@ class FilterHour(FilterBase):
     """
 
     def add_to_dict(self, query, query_dict, query_parts):
-        if "hr" in query_parts:
-            min_val, max_val = RangeValueUtil.parse_range_values(query_parts.get("hr"))
+        if "h" in query_parts:
+            min_val, max_val = RangeValueUtil.parse_range_values(query_parts.get("h"))
             query_dict["hour"] = {
                 "min": min_val,
                 "max": max_val
