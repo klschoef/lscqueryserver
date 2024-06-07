@@ -60,25 +60,35 @@ class MessageQuery(MessageBase):
         return {"num": len(results), "totalresults": total_results, "results": results, "debug_info": debug_info, "requestId": client_request.content.get("requestId")}
 
     async def handle_temporal_query(self, query_dicts, client_request, client, skip, results_per_page, debug_info):
-        # check if information from mongo is needed
-        no_mongo_query_required = True
-        for query_dict in query_dicts:
-            for key in query_dict.keys():
-                if key == "clip" or key == "gpt" \
-                        or query_dict.get(key) is None \
-                        or query_dict.get(key) == [] \
-                        or query_dict.get(key) == "":
-                    continue
-                no_mongo_query_required = False
-                break
-            if not no_mongo_query_required:
-                break
+        temporal_prefetch_mode = client_request.content.get("temporalPrefetchMode", True)
+        temporal_db_prefetch_page_size = client_request.content.get("temporalDBPrefetchPageSize", 5000)
 
-        if no_mongo_query_required:
+        if temporal_prefetch_mode:
             filenames_per_part = [
                 await QueryFetcher.transform_to_mongo_query(query_dict, client, client_request, debug_info)
                 for query_dict in query_dicts]
-            filenames_per_part = [m.get("$and", [])[0].get("filepath", {}).get("$in", []) for m in filenames_per_part if len(m.get("$and", [])) > 0]
+
+            for index, query_dict in enumerate(query_dicts):
+                for key in query_dict.keys():
+                    if key == "clip" or key == "gpt" \
+                            or query_dict.get(key) is None \
+                            or query_dict.get(key) == [] \
+                            or query_dict.get(key) == "":
+                        continue
+                    else:
+                        # fetch database
+                        await client.send_progress_step(f"Prefetch db for block {index+1} ...")
+                        images = [
+                            image.get("filepath")
+                            for image in client.db['images'].aggregate(
+                                self.generate_mongo_pipeline(filenames_per_part[index], 0, temporal_db_prefetch_page_size))]
+                        filenames_per_part[index] = {"$and": [{'filepath': {'$in': images}}]}
+                        break
+
+            filenames_per_part = [
+                m.get("$and", [])[0].get("filepath", {}).get("$in", [])
+                for m in filenames_per_part if len(m.get("$and", [])) > 0
+            ]
 
             first_per_day = client_request.content.get("firstPerDay")
             date_time_regex = r".*\/.*\/([0-9]{8})_([0-9]{6})"
