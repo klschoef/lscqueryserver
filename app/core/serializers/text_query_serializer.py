@@ -19,15 +19,21 @@ class TextQuerySerializer:
             "weekday": None,
             "heart_rate": None,
         }
+        command_prefix_char = client_request.content.get("textCommandPrefix", "-")
+        modified_query = f"{' ' if text_query.startswith(command_prefix_char) else ''}{text_query}"
+        modified_query = modified_query.replace(f" {command_prefix_char}", f" |°^|°^").split(f" |°^")
+        split_regex = r"^\|\°\^([^\s]+)\s(.*)"
 
-        split_regex = r"(\/([^\s]+)([^\/]*))"
+        commands = {}
 
-        commands = re.findall(split_regex, text_query)
-        commands = {entry[1]:entry[2] for entry in commands if len(entry) > 2}
-        clip_command = re.findall(r"^([^\/]*)", text_query)
+        for part in modified_query:
+            if part.startswith("|°^"):
+                find_results = re.findall(split_regex, part.strip())
+                if find_results and len(find_results) == 1 and len(find_results[0]) == 2:
+                    commands[find_results[0][0]] = find_results[0][1]
+            else:
+                commands["gpt" if client_request.content.get("useGPTasDefault") else "clip"] = part.strip()
 
-        if clip_command and len(clip_command) > 0:
-            commands["gpt" if client_request.content.get("useGPTasDefault") else "clip"] = clip_command[0].strip()
 
         # apply filters to get the query_dict from the text query
         for current_filter in filters:
