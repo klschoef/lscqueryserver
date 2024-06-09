@@ -11,5 +11,5 @@ class FilterWeekday(FilterBase):
     """
 
     def add_to_dict(self, query, query_dict, query_parts):
-        if "w" in query_parts:
-            query_dict["weekday"] = query_parts.get("w")
+        if "w" in query_parts or "wd" in query_parts:
+            query_dict["weekday"] = query_parts.get("w", query_parts.get("wd"))
