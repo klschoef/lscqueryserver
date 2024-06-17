@@ -297,3 +297,30 @@ options:
   -o OUTPUT, --output OUTPUT
                         Output file path (default: queries.log.filtered.[current_timestamp])
 ```
+
+### Generate results from query log
+To generate results from the query log, you can use the following command:
+```
+cd app
+python3 generate-results-log.py path-to-your-queries.log
+```
+
+You will get the related response file (the script will fetch each query from the log file via the local websocket server (you also can specify the server with the parameters))
+
+Usage (-h parameter):
+```
+usage: generate-results-log.py [-h] [--server_url SERVER_URL] [--response_log_file RESPONSE_LOG_FILE] log_file
+
+Process and send log file entries to the lsc query server and save responses.
+
+positional arguments:
+  log_file              Path to the log file containing queries to send.
+
+options:
+  -h, --help            show this help message and exit
+  --server_url SERVER_URL
+                        WebSocket server URL (default: ws://localhost:8080).
+  --response_log_file RESPONSE_LOG_FILE
+                        File to save the responses from the server (default: response.[timestamp].log).
+
+```
