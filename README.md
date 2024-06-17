@@ -265,4 +265,35 @@ a red car with an object car was visible. Each of them on the same day in this e
 50 results like 03.04.2021 18.45 clip found it for bed and in mongo db we have a tv as an object
 For each result (in that case just the example)
 
-Was wenn wir jeweils den kompletten Tag fetchen?
+## Query Log
+A query log with all requests is stored in app/queries.log with the following format:
+```
+[timestamp]: [json_query]
+[timestamp]: [json_query]
+...
+```
+
+### Filter Query Log
+To get a filtered query log to get all entries between timestamp 1718006958 - 1718013037, you can use the following command:
+```
+cd app
+python3 filter-queries-log.py 1718006958 1718013037
+```
+
+The script also offers the following options (you get this info with the -h parameter)
+```
+usage: filter-queries-log.py [-h] [-i INPUT] [-o OUTPUT] start_timestamp end_timestamp
+
+Filter log entries by timestamp range.
+
+positional arguments:
+  start_timestamp       Start timestamp (inclusive).
+  end_timestamp         End timestamp (inclusive).
+
+options:
+  -h, --help            show this help message and exit
+  -i INPUT, --input INPUT
+                        Input file path (default: ./queries.log)
+  -o OUTPUT, --output OUTPUT
+                        Output file path (default: queries.log.filtered.[current_timestamp])
+```
