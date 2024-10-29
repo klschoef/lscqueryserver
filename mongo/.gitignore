@@ -1,0 +1,3 @@
+!backups/.gitkeep
+backups/*
+mongodb_data

@@ -5,7 +5,8 @@ services:
     deploy:
       resources:
         limits:
-          memory: 8G
+          memory: 16G
+    shm_size: '16G'
     volumes:
       - .:/app
-    command: ["python", "extract-image-features.py"]
+    command: ["python", "extract-image-features.py", "images", "test.csv"]

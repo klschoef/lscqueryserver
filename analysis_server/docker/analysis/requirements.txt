@@ -1,0 +1,11 @@
+faiss-cpu~=1.8
+pandas~=2.0
+numpy~=1.24
+open-clip-torch~=2.24
+python-dotenv~=1.0.1
+psutil~=6.1.0
+exifread~=3.0
+timezonefinder~=6.5.4
+websockets>=12.0,<13.0
+pymongo>=4.6.2,<5
+requests>=2.31.0,<3

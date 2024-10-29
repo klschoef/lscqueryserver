@@ -1,0 +1,19 @@
+version: '3.8'
+services:
+  clip:
+    build: docker/open_clip
+    deploy:
+      resources:
+        limits:
+          memory: 16G
+    shm_size: '16G'
+    volumes:
+      - .:/app
+      - ${IMAGES_PATH}:/images
+      - ${CSV_FILE}:/faiss_index.csv
+      - ./hf-cache:/hf-cache
+    ports:
+      - "${CLIP_PORT}:8002"
+    command: ["python", "openclip.py"]
+    environment:
+      - HF_HOME=/hf-cache

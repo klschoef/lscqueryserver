@@ -6,6 +6,11 @@ from PIL import Image
 import os
 import glob
 import csv
+import logging
+logging.basicConfig(level=logging.DEBUG)
+import psutil
+memory = psutil.virtual_memory()
+print(f"Available Memory: {memory.available / (1024 ** 3):.2f} GB")
 
 parser = argparse.ArgumentParser(description='Extract open_clip image features to a csv file out of a given folder with images.')
 parser.add_argument('rootdir', help='Folder with images.')
