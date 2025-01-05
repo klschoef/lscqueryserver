@@ -53,7 +53,7 @@ logging.info(device)
 model, _, preprocess = open_clip.create_model_and_transforms(args.model_name, pretrained=args.weights_name, device=device)
 logging.info('model loaded')
 
-csvfile = open(args.csv_file, 'w')
+csvfile = open(args.csv_file, 'a')
 csvwriter = csv.writer(csvfile, delimiter=',')
 
 def main():

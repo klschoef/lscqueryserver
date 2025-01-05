@@ -5,8 +5,8 @@ services:
     deploy:
       resources:
         limits:
-          memory: 16G
-    shm_size: '16G'
+          memory: 32G
+    shm_size: '32G'
     volumes:
       - .:/app
       - ${IMAGES_PATH}:/images
@@ -14,6 +14,6 @@ services:
       - ./hf-cache:/hf-cache
     ports:
       - "${CLIP_PORT}:8002"
-    command: ["python", "openclip.py"]
+    command: ["python", "clip.py"]
     environment:
       - HF_HOME=/hf-cache

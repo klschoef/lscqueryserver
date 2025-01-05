@@ -10,7 +10,7 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 import psutil
 memory = psutil.virtual_memory()
-print(f"Available Memory: {memory.available / (1024 ** 3):.2f} GB")
+logging.info(f"Available Memory: {memory.available / (1024 ** 3):.2f} GB")
 
 parser = argparse.ArgumentParser(description='Extract open_clip image features to a csv file out of a given folder with images.')
 parser.add_argument('rootdir', help='Folder with images.')
@@ -25,25 +25,25 @@ modelname = args.model_name
 modelweights = args.pretrained_name
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-print(f"create model ... ({modelname}, {modelweights}) with {device} ...")
+logging.info(f"create model ... ({modelname}, {modelweights}) with {device} ...")
 
 try:
     model, _, preprocess = open_clip.create_model_and_transforms(modelname, pretrained=modelweights, device=device)
 except Exception as e:
-    print(f"Loading Model Error: {e}")
+    logging.info(f"Loading Model Error: {e}")
     exit(1)
 
-print(f"open csv writer ...")
-csvfile = open(f'openclip-{args.file_name}-{modelname}_{modelweights}.csv', 'w')
+logging.info(f"open csv writer ...")
+csvfile = open(f'openclip-lsc-{args.file_name}-{modelname}_{modelweights}.csv', 'w')
 writer = csv.writer(csvfile, delimiter=',')
 
 image_suffix = args.image_suffix
 
-print(f"iterate through filenames ...")
+logging.info(f"iterate through filenames ...")
 for filename in glob.iglob(rootdir + f'**/**/*.{image_suffix}', recursive=True):
     basename = os.path.basename(filename)
     relpath = os.path.relpath(filename, rootdir)
-    print(filename)
+    logging.info(filename)
 
     image = preprocess(Image.open(filename)).unsqueeze(0).to(device)
 
@@ -54,6 +54,6 @@ for filename in glob.iglob(rootdir + f'**/**/*.{image_suffix}', recursive=True):
         mylist.insert(0, relpath)
         writer.writerow(mylist)
 
-        print(relpath)
+        logging.info(relpath)
 
 csvfile.close()

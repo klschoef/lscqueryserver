@@ -9,3 +9,4 @@ timezonefinder~=6.5.4
 websockets>=12.0,<13.0
 pymongo>=4.6.2,<5
 requests>=2.31.0,<3
+transformers~=4.46.1

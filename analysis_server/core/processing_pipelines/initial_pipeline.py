@@ -1,7 +1,8 @@
 import os
 
 from core.helpers.exif_helper import extract_exif_data
-from core.helpers.image_helper import save_image, resize_image
+from core.helpers.image_helper import save_image, resize_image, open_image_with_fixed_orientation, get_image_checksum, \
+    get_image_storage_path
 from core.helpers.timezone_helper import get_timezone
 from core.processing_pipelines.base_pipeline import BasePipeline
 from datetime import datetime
@@ -22,8 +23,18 @@ class InitialPipeline(BasePipeline):
         if latitude and longitude:
             timezone = get_timezone(latitude, longitude)
 
+        img = open_image_with_fixed_orientation(initial_image_path)
         # Open and resize the image
-        with Image.open(initial_image_path) as img:
+        if img:
+            original_checksum = get_image_checksum(img)
+            # Check if the image with this checksum already exists in the database
+            existing_image_document = mongo_collection.find_one({"metadata.original_sha256_checksum": original_checksum})
+
+            if existing_image_document:
+                print(f"Image with checksum {original_checksum} already exists in the database.")
+                existing_image = open_image_with_fixed_orientation(get_image_storage_path(upload_path, existing_image_document.get("filename")))
+                return existing_image, existing_image_document
+
             resized_img = resize_image(img)
 
             # Save the image with a timestamped filename
@@ -54,7 +65,10 @@ class InitialPipeline(BasePipeline):
                 "height": resized_img.size[1],
                 "metadata": {
                     "added_to_system": datetime.now(),
-                    "exif_data": raw_exif_data
+                    "exif_data": raw_exif_data,
+                    "original_sha256_checksum": original_checksum,
+                    "resized_sha256_checksum": get_image_checksum(resized_img),
+                    "original_file_name": initial_image_path.split("/")[-1],
                 }
             }
 

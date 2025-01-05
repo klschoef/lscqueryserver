@@ -14,13 +14,29 @@ class OpenClipPipeline(BasePipeline):
     def process(self, image, image_document, mongo_collection, *args, **kwargs) -> tuple:
         """Synchronously process an image and handle WebSocket communication."""
         # Run the async method synchronously using asyncio.run
+        if image_document.get('metadata', {}).get('open_clip_metadata', {}).get('added_line_row') is not None:
+            print(f"OpenClip metadata already exists for {image_document.get('_id')}. Skipping.")
+            #return image, image_document
+
+        print(f"Processing {image_document.get('filepath')} with OpenClip...")
+
         clip_response = asyncio.run(self.get_clip_response_sync({
             'content': {
                 'type': 'indexrequest',
                 'filepath': image_document.get('filepath')
             }
         }))
-        print(clip_response)
+        clip_entry_metadata = clip_response.get('clip_entry_metadata') if isinstance(clip_response, dict) else None
+        if clip_entry_metadata and clip_entry_metadata.get('added_line_row') is not None:
+            print(f"OpenClip added index. (metadata: {clip_response.get('clip_entry_metadata')})")
+            mongo_collection.update_one({'_id': image_document.get('_id')}, {'$set': {
+                'metadata.open_clip_metadata': clip_response.get('clip_entry_metadata'),
+                'l2dist': clip_entry_metadata.get('l2_to_last_one')
+            }})
+            # Re-fetch the updated document from MongoDB
+            image_document = mongo_collection.find_one({'_id': image_document.get('_id')})
+        else:
+            print(f"OpenClip did not add index. (response: {clip_response})")
         return image, image_document
 
     async def get_clip_response_sync(self, message_dict):
@@ -35,6 +51,5 @@ class OpenClipPipeline(BasePipeline):
         return json.loads(clip_response)
 
     async def get_clip_websocket(self):
-        if self.clip_websocket is None:
-            self.clip_websocket = await websockets.connect(os.getenv('CLIP_URL'))
+        self.clip_websocket = await websockets.connect(os.getenv('CLIP_URL'))
         return self.clip_websocket

@@ -6,4 +6,5 @@ services:
       - ./app:/app
     ports:
       - "${SERVER_PORT}:8080"
+    restart: unless-stopped
     command: ["python", "server.py"]

@@ -9,4 +9,7 @@ services:
     shm_size: '16G'
     volumes:
       - .:/app
+      - ./hf-cache:/hf-cache
     command: ["python", "extract-image-features.py", "images", "test.csv"]
+    environment:
+      - HF_HOME=/hf-cache

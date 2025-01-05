@@ -127,3 +127,6 @@ __pycache__/
 *.py[cod]
 *$py.class
 solrdata
+
+hf-cache
+*.env
