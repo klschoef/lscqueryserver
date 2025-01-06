@@ -1,4 +1,5 @@
 !backups/.gitkeep
 backups/*
 mongodb_data
-certs
+docker/mongo/certs
+docker/mongo/ssl
