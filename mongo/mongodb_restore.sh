@@ -18,7 +18,7 @@ fi
 
 # Check if a specific backup file is provided
 if [ "$1" ]; then
-    backup_file="./backups/$1"
+    backup_file="./$1"
     if [ ! -f "$backup_file" ]; then
         echo "Error: Backup file not found."
         exit 1
