@@ -130,3 +130,4 @@ solrdata
 
 hf-cache
 *.env
+*.csv

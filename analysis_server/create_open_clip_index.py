@@ -41,7 +41,8 @@ def main():
         counter = 0
 
         # Iterate through all images in the specified folder
-        for filename in glob.iglob(search_pattern + '**/**/*.jpg', recursive=True):
+        for filename in glob.iglob(search_pattern, recursive=True):
+            print(f"Processing: {filename}")
             try:
                 relpath = os.path.relpath(filename, args.input_folder)
                 print(f"Processing: {relpath}")
