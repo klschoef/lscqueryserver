@@ -16,7 +16,6 @@ def main():
     parser.add_argument("output_prefix", help="Prefix for the output CSV file.")
     parser.add_argument("--model-name", default="ViT-H-14", help="Model name to use (default: 'ViT-H-14').")
     parser.add_argument("--model-weights", default="laion2b_s32b_b79k", help="Pretrained weights to use (default: 'laion2b_s32b_b79k').")
-    parser.add_argument("--recursive", action="store_true", help="Recursively search for images in subdirectories.")
     args = parser.parse_args()
 
     # Set device: use CUDA if available, otherwise CPU
@@ -37,12 +36,12 @@ def main():
         writer = csv.writer(csvfile, delimiter=',')
 
         # Define the search pattern based on recursive option
-        search_pattern = os.path.join(args.input_folder, '**', '*.jpg') if args.recursive else os.path.join(args.input_folder, '*.jpg')
+        search_pattern = os.path.join(args.input_folder, '**', '**', '*.jpg')
 
         counter = 0
 
         # Iterate through all images in the specified folder
-        for filename in glob.iglob(search_pattern, recursive=args.recursive):
+        for filename in glob.iglob(search_pattern + '**/**/*.jpg', recursive=True):
             try:
                 relpath = os.path.relpath(filename, args.input_folder)
                 print(f"Processing: {relpath}")
