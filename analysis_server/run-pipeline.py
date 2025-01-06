@@ -20,7 +20,11 @@ def main():
 
     pipelines = [Blip2Pipeline()]
     query_blip2 = {"$or": [{"blip2caption": {"$exists": False}}, {"blip2caption": None}]}
+    size = images_collection.count_documents(query_blip2)
+    counter = 0
     for image_doc in images_collection.find(query_blip2):
+        counter += 1
+        print(f"Processing image {counter} of {size}...")
         image_path = Path(args.image_storage).joinpath(image_doc.get("filepath"))
         if os.path.isfile(image_path):
             with Image.open(image_path) as img:
