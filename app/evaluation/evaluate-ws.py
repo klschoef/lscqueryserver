@@ -2,17 +2,20 @@ import json
 import argparse
 import asyncio
 import websockets
+import datetime
+
+# Current date and time
+now = datetime.datetime.now()
+default_file_name = now.strftime("results_%Y_%m_%d_%H_%M_%S.json")
 
 clipdata = []
 parser = argparse.ArgumentParser(description='Convert the LSC23 file to JSON.')
 parser.add_argument('topic_json_file', help='Topic File in JSON format.')
 parser.add_argument('--versions', default="0", help='How much GPT versions should be used')
-parser.add_argument('--model_name', default="ViT-H-14", help='Model name like "ViT-H-14"')
-parser.add_argument('--pretrained_name', default="laion2b_s32b_b79k", help='Pretrained model name like "laion2b_s32b_b79k"')
+parser.add_argument('--result_file_name', default=default_file_name, help='Name of the result file')
 
 args = parser.parse_args()
 
-print(f"use model: {args.model_name}, pretrained: {args.pretrained_name} ...")
 
 print(f"load json file: {args.topic_json_file} ...")
 lsc_json_file = args.topic_json_file
@@ -120,7 +123,7 @@ async def send_and_receive_message():
         print(f"evaluation done.")
         print(f"results: {results}")
         # save results to json file with model name and pretrained name
-        result_file = f"evaluation/results/results_{args.model_name}_{args.pretrained_name}_versions_{args.versions}.json"
+        result_file = f"evaluation/results/{args.result_file_name}"
         with open(result_file, 'w') as json_file:
             json.dump(results, json_file, indent=4)
 

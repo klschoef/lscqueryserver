@@ -2,7 +2,6 @@ import argparse
 from time import sleep
 
 from dotenv import load_dotenv
-import os
 from PIL import Image
 
 from core.helpers.mongo_helper import get_mongo_collection
@@ -22,8 +21,8 @@ def main():
 
     while True:
         error = False
+        pipelines = [Blip2Pipeline()]
         try:
-            pipelines = [Blip2Pipeline()]
             query_blip2 = {"$or": [{"blip2caption": {"$exists": False}}, {"blip2caption": None}]}
             size = images_collection.count_documents(query_blip2)
             counter = 0

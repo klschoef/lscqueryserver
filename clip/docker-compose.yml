@@ -11,7 +11,7 @@ services:
       - .:/app
       - ${IMAGES_PATH}:/images
       - ${CSV_FILE}:/faiss_index.csv
-      - ./hf-cache:/hf-cache
+      - ./../hf-cache:/hf-cache
     ports:
       - "${CLIP_PORT}:8002"
     command: ["python", "clip.py"]

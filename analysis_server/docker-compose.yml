@@ -11,7 +11,7 @@ services:
       - .:/app
       - ${IMAGES_PATH}:/images
       - ${IMAGES_TO_PROCESS}:/images_to_process
-      - ./hf-cache:/hf-cache
+      - ${HF_HOME}:/hf-cache
     command: ["python", "extract-image-features.py"]
     environment:
       - HF_HOME=/hf-cache
