@@ -139,7 +139,7 @@ async def ws_handler(websocket):
                         await websocket.send(json.dumps({'error': 'index is empty'}))
                         return
                 elif event['type'] == 'similarity-query':
-                    D, I = similaritysearch(int(evet['query']), k)
+                    D, I = similaritysearch(int(event['query']), k)
                 elif event['type'] == 'file-similarityquery':
                     logging.info(f'trying to load {event["query"]} from {args.keyframe_base_root} {event["pathprefix"]}')
                     # check if path is on local machine

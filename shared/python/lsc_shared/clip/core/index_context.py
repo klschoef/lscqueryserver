@@ -1,7 +1,7 @@
 import logging
 
-from core.exceptions.empty_index_exception import EmptyIndexException
-from core.helpers.clip_helper import loadClipFeatures
+from lsc_shared.clip.core.exceptions.empty_index_exception import EmptyIndexException
+from lsc_shared.clip.core.helpers.clip_helper import loadClipFeatures
 
 logging.basicConfig(level=logging.DEBUG)
 

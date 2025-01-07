@@ -18,10 +18,10 @@ def main():
     # Connect to MongoDB
     load_dotenv()
     images_collection = get_mongo_collection(os.getenv('MONGO_DB_URL'), os.getenv('MONGO_DB_DATABASE'))
+    pipelines = [Blip2Pipeline()]
 
     while True:
         error = False
-        pipelines = [Blip2Pipeline()]
         try:
             query_blip2 = {"$or": [{"blip2caption": {"$exists": False}}, {"blip2caption": None}]}
             size = images_collection.count_documents(query_blip2)

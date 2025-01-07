@@ -3,7 +3,7 @@ import pandas as pd
 import logging
 import faiss
 
-from core.exceptions.empty_index_exception import EmptyIndexException
+from lsc_shared.clip.core.exceptions.empty_index_exception import EmptyIndexException
 
 logging.basicConfig(level=logging.DEBUG)
 
