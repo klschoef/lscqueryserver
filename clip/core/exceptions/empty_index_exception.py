@@ -1,2 +1,0 @@
-class EmptyIndexException(Exception):
-    pass

@@ -1,6 +1,0 @@
-images/*
-results/*
-!images/.gitkeep
-!results/.gitkeep
-openclip-test*
-*.csv

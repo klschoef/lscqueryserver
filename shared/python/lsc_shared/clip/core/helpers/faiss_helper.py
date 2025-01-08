@@ -1,0 +1,101 @@
+import os
+
+import pandas as pd
+import logging
+import faiss
+from lsc_shared.clip.core.exceptions.empty_index_exception import EmptyIndexException
+
+
+def csv_to_faiss(csvfilename, faissfilename, labelfilename):
+    logging.info(f'Loading data from {csvfilename}')
+
+    # Check if the CSV file exists and is not empty
+    if not os.path.isfile(csvfilename) or os.path.getsize(csvfilename) < 10:
+        raise ValueError(f'CSV file {csvfilename} is empty or does not exist')
+
+    # Read the CSV file
+    csvdata = pd.read_csv(csvfilename, sep=",", header=None)
+
+    # Extract data (excluding the labels in the first column)
+    data = csvdata.iloc[:, 1:].values.astype('float32')
+    # Extract labels (from the first column)
+    labels = csvdata.iloc[:, 0].tolist()
+
+    logging.info(f'Data loaded with shape {data.shape}')
+
+    # Create the index
+    d = data.shape[1]
+    index = faiss.IndexFlatIP(d)
+    index.add(data)  # Add data to the index
+
+    # Save the index
+    faiss.write_index(index, faissfilename)
+    logging.info(f'Index saved to {faissfilename}')
+
+    # Save labels in a separate file
+    with open(labelfilename, 'w') as f:
+        for label in labels:
+            f.write(f"{label}\n")
+    logging.info(f'Labels saved to {labelfilename}')
+
+def get_faiss_and_label_paths(folder_path):
+    faiss_file_path = os.path.join(folder_path, "index.faiss")
+    labels_file_path = os.path.join(folder_path, "index.labels")
+
+    return faiss_file_path, labels_file_path
+
+def save_faiss_index_with_labels(index, labels, folder_path):
+    # Define the file paths for the index and labels within the specified folder
+    faiss_file_path, labels_file_path = get_faiss_and_label_paths(folder_path)
+
+    # Save the FAISS index
+    faiss.write_index(index, faiss_file_path)
+    logging.info(f"Saved FAISS index with {index.ntotal} vectors to {faiss_file_path}")
+
+    # Save the labels
+    with open(labels_file_path, 'w') as file:
+        for label in labels:
+            file.write(f"{label}\n")
+
+    logging.info(f"Saved {len(labels)} labels to {labels_file_path}")
+
+def save_faiss_index(index, folder_path):
+    # Define the file paths for the index and labels within the specified folder
+    faiss_file_path, labels_file_path = get_faiss_and_label_paths(folder_path)
+
+    # Save the FAISS index
+    faiss.write_index(index, faiss_file_path)
+    logging.info(f"Saved FAISS index with {index.ntotal} vectors to {faiss_file_path}")
+
+def append_labels_to_label_file(labels, folder_path):
+    # Define the file path for the labels within the specified folder
+    faiss_file_path, labels_file_path = get_faiss_and_label_paths(folder_path)
+
+    # Append the labels to the existing file
+    with open(labels_file_path, 'a') as file:
+        for label in labels:
+            file.write(f"{label}\n")
+
+    logging.info(f"Appended {len(labels)} labels to {labels_file_path}")
+
+def load_clip_features(folder_path):
+    # Define the file paths for the index and labels within the specified folder
+    faiss_file_path, labels_file_path = get_faiss_and_label_paths(folder_path)
+
+    # Load the FAISS index
+    if not os.path.isfile(faiss_file_path):
+        raise FileNotFoundError(f"The FAISS index file {faiss_file_path} does not exist")
+
+    index = faiss.read_index(faiss_file_path)
+    logging.info(f"Loaded FAISS index with {index.ntotal} vectors")
+
+    # Load the labels
+    if not os.path.isfile(labels_file_path):
+        raise FileNotFoundError(f"The labels file {labels_file_path} does not exist")
+
+    with open(labels_file_path, 'r') as file:
+        labels = file.read().splitlines()
+
+    logging.info(f"Loaded {len(labels)} labels")
+
+    return index, labels

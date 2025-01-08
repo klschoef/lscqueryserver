@@ -1,11 +1,5 @@
 import io
-
-import math
-
-import csv
-
 import json
-
 import argparse
 import asyncio
 import open_clip
@@ -19,8 +13,9 @@ import logging
 from pathlib import Path
 from PIL import Image
 
-from core.clip_context import ClipContext
-from core.index_context import IndexContext
+from lsc_shared.clip.core.clip_context import ClipContext
+from lsc_shared.clip.core.index_context import IndexContext
+from lsc_shared.clip.core.helpers.clip_helper import clip_similarity_search, calculate_l2_distance, search_in_index, filter_and_label_results
 
 logging.basicConfig(level=logging.DEBUG)
 import psutil
@@ -33,7 +28,7 @@ load_dotenv(dotenv_path)
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description="OpenCLIP Search Server")
 parser.add_argument('--keyframe_base_root', default=os.getenv("KEYFRAME_BASE_ROOT", "/images"), help='Base path to the images (keyframes)')
-parser.add_argument('--csv_file', default=os.getenv("CSV_FILE", "/faiss_index.csv"), help='Path to the CSV file')
+parser.add_argument('--faiss_folder', default=os.getenv("FAISS_FOLDER"), help='Path to the FAISS folder')
 parser.add_argument('--ws_port', default=int(os.getenv("FAISS_WS_PORT", "8002")), help='Websocket Port')
 parser.add_argument('--image_server_path', default=os.getenv("FAISS_IMAGE_SERVER_PATH", "http://extreme00.itec.aau.at/lifexplore"), help='Base path to the image server')
 parser.add_argument('--image_server_timeout', default=int(os.getenv("FAISS_IMAGE_SERVER_TIMEOUT", "5")), help='Timeout for image server requests')
@@ -41,12 +36,10 @@ parser.add_argument('--model_name', default=os.getenv("MODEL_NAME", "ViT-H-14"),
 parser.add_argument('--weights_name', default=os.getenv("WEIGHTS_NAME", "laion2b_s32b_b79k"), help='Weights Name')
 args = parser.parse_args()
 
-logging.info(f"try to load csv_file: {args.csv_file}")
-index_context = IndexContext(args.csv_file)
+logging.info(f"try to load faiss_folder: {args.faiss_folder}")
+index_context = IndexContext(args.faiss_folder)
 
 clip_context = ClipContext(args.model_name, args.weights_name)
-csvfile = open(args.csv_file, 'a')
-csvwriter = csv.writer(csvfile, delimiter=',')
 
 def main():
     logging.info(f"try to start on port {args.ws_port} with image_server_path {args.image_server_path} ...")
@@ -63,11 +56,11 @@ async def ws_handler(websocket):
             message = await websocket.recv()
             logging.info(message)
             event = json.loads(message).get('content', {})
-            D = []
-            I = []
-            k = int(event.get('maxresults', '0'))
-            resultsPerPage = int(event.get('resultsperpage', '0'))
-            selectedPage = int(event.get('selectedpage', '1'))
+            distances = []
+            ids = []
+            max_results = int(event.get('maxresults', '0'))
+            results_per_page = int(event.get('resultsperpage', '0'))
+            selected_page = int(event.get('selectedpage', '1'))
             clientId = event.get('clientId')
 
             with torch.no_grad():
@@ -89,16 +82,11 @@ async def ws_handler(websocket):
 
                     image = clip_context.preprocess(image).unsqueeze(0).to(clip_context.device)
                     image_features = clip_context.model.encode_image(image)
-                    image_features = image_features.cpu()
-                    features_list = image_features[0].tolist()
+                    image_features = image_features.cpu().numpy()
                     logging.info('features extracted')
 
-                    logging.info('writing to csv')
-                    features_list.insert(0, filepath)
-                    csvwriter.writerow(features_list)
-
-                    logging.info('reload local index')
-                    index_context.load_clip_features()
+                    logging.info('writing to faiss folder files ...')
+                    index_context.add_new_entry(image_features, filepath)
 
                     # fetch index
                     indicies = index_context.get_datalabels()[index_context.get_datalabels().str.contains(filepath)].index.tolist()
@@ -134,12 +122,12 @@ async def ws_handler(websocket):
                     text_features = clip_context.model.encode_text(input).cpu()
                     logging.info(text_features.shape)
                     try:
-                        D, I = search(text_features, k)
+                        distances, ids = search_in_index(text_features,index_context.get_index(), max_results)
                     except EmptyIndexError:
                         await websocket.send(json.dumps({'error': 'index is empty'}))
                         return
                 elif event['type'] == 'similarity-query':
-                    D, I = similaritysearch(int(event['query']), k)
+                    distances, ids = clip_similarity_search(index_context, int(event['query']), max_results)
                 elif event['type'] == 'file-similarityquery':
                     logging.info(f'trying to load {event["query"]} from {args.keyframe_base_root} {event["pathprefix"]}')
                     # check if path is on local machine
@@ -167,11 +155,11 @@ async def ws_handler(websocket):
                     logging.info('shape:',image_features.shape)
                     mylist = image_features[0].tolist()
                     logging.info('features extracted')
-                    D, I = search(image_features, k)
+                    distances, ids = search_in_index(image_features, index_context.get_index(), max_results)
                     logging.info('file-similarity search finished')
 
-            kfresults, kfresultsidx, kfscores = filterAndLabelResults(I, D, resultsPerPage, selectedPage)
-            results = {'num':len(kfresults), 'clientId': clientId, 'totalresults':k, 'results':kfresults, 'resultsidx':kfresultsidx, 'scores':kfscores }
+            kfresults, kfresultsidx, kfscores = filter_and_label_results(ids, distances, index_context.get_datalabels(), results_per_page, selected_page)
+            results = {'num':len(kfresults), 'clientId': clientId, 'totalresults':max_results, 'results':kfresults, 'resultsidx':kfresultsidx, 'scores':kfscores }
             tmp = json.dumps(results)
             #logging.info(tmp)
             await websocket.send(tmp)
@@ -179,43 +167,6 @@ async def ws_handler(websocket):
         logging.info("Connection closed gracefully.")
     except Exception as e:
         logging.info("Exception: ", str(e))
-
-def calculate_l2_distance(list1, list2):
-    """Calculate the L2 distance between two lists of floats."""
-    if len(list1) != len(list2):
-        raise ValueError("Lists must have the same length.")
-
-    distance = math.sqrt(sum((a - b) ** 2 for a, b in zip(list1, list2)))
-    return distance
-
-
-def search(text_features, k):
-    D, I = index_context.get_index().search(text_features, k)
-    return D, I
-
-def similaritysearch(idx, k):
-    D, I = index_context.get_index().search(index_context.get_data()[idx:idx+1], k)
-    return D, I
-
-def filterAndLabelResults(I, D, resultsPerPage, selectedPage):
-    labels = index_context.get_datalabels()
-    kfresults = []
-    kfresultsidx = []
-    kfscores = []
-    ifrom = (selectedPage - 1) * resultsPerPage
-    ito = selectedPage * resultsPerPage
-    #for idx in I[0]:
-    logging.info(f'from:{ifrom} to:{ito}')
-    for i in range(ifrom,ito):
-        idx = I[0][i]
-        score = D[0][i]
-        if idx == -1:
-            logging.info(f"idx: {idx}, score: {score}, i: {i}")
-            break
-        kfresults.append(str(labels[idx]))
-        kfresultsidx.append(int(idx))
-        kfscores.append(str(score))
-    return kfresults, kfresultsidx, kfscores
 
 async def run_ws(ws_port):
     async with websockets.serve(ws_handler, "", ws_port):
