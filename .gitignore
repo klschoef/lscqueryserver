@@ -132,3 +132,4 @@ hf-cache
 *.env
 *.csv
 .venv
+*.faiss

@@ -36,11 +36,16 @@ class IndexContext:
             self._index = None
             self._datalabels = None
 
-    def add_new_entry(self, features_array, label):
+    def add_new_entry(self, features_array, label, store=True):
         if self._index is None:
             self.load_clip_features()
         self._index.add(features_array)
         self._datalabels.append(label)
 
+        if store:
+            save_faiss_index(self._index, self.faiss_folder)
+            append_labels_to_label_file([label], self.faiss_folder)
+
+    def store_index(self):
         save_faiss_index(self._index, self.faiss_folder)
-        append_labels_to_label_file([label], self.faiss_folder)
+        append_labels_to_label_file(self._datalabels, self.faiss_folder)

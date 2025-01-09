@@ -16,10 +16,12 @@ def main():
     parser.add_argument("input_folder", help="Path to the folder containing images.")
     parser.add_argument("faiss_folder", help="Path to faiss folder, which should be created")
     parser.add_argument("--model-name", default="ViT-H-14", help="Model name to use (default: 'ViT-H-14').")
+    parser.add_argument("--store-at-end", default="True", help="Store the index at the end (default: 'True').")
     parser.add_argument("--model-weights", default="laion2b_s32b_b79k", help="Pretrained weights to use (default: 'laion2b_s32b_b79k').")
     args = parser.parse_args()
 
-    clip_context = ClipContext(args.mode_name, args.model_weights)
+    clip_context = ClipContext(args.model_name, args.model_weights)
+    store_at_end = args.store_at_end.lower() in ['true', '1', 't', 'y', 'yes']
 
     prepare_folder_and_files(args.faiss_folder)
     index_context = IndexContext(args.faiss_folder)
@@ -47,12 +49,18 @@ def main():
             # Encode image features
             with torch.no_grad():
                 image_features = clip_context.model.encode_image(image).cpu().numpy()
-                index_context.add_new_entry(image_features, relpath)
+                index_context.add_new_entry(image_features, relpath, store=not store_at_end)
 
             counter += 1
             print(f"Processed {counter}/{total_amount} images.")
+            if counter > 1000:
+                break
         except Exception as e:
             print(f"Error processing '{filename}': {e}")
+
+    print("Storing index...")
+    if store_at_end:
+        index_context.store_index()
 
     print("Processing complete.")
 
