@@ -53,8 +53,6 @@ def main():
 
             counter += 1
             print(f"Processed {counter}/{total_amount} images.")
-            if counter > 1000:
-                break
         except Exception as e:
             print(f"Error processing '{filename}': {e}")
 
