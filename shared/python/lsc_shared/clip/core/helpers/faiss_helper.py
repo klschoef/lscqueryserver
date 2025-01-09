@@ -104,23 +104,31 @@ def prepare_folder_and_files(folder_path, index_shape=1024):
     # Define the file paths using the helper function
     faiss_file_path, labels_file_path = get_faiss_and_label_paths(folder_path)
 
-    # Ensure the directory exists
-    if not os.path.exists(folder_path):
-        os.makedirs(folder_path)
-        logging.info(f"Created directory at {folder_path}")
+    # Remove existing folder with files if it exists
+    if os.path.exists(folder_path):
+        for file_path in [faiss_file_path, labels_file_path]:
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+        logging.info(f"Removed existing files in folder at {folder_path}")
 
-    # Check if the FAISS index file exists, create a placeholder if not
-    if not os.path.isfile(faiss_file_path):
-        # Create an empty FAISS index and save it as a placeholder
-        dimension = index_shape
-        index = faiss.IndexFlatL2(dimension)  # Using L2 distance for placeholder
-        faiss.write_index(index, faiss_file_path)
-        logging.info(f"Created placeholder FAISS index file at {faiss_file_path}")
+    # Remove folder
+    if os.path.exists(folder_path):
+        os.rmdir(folder_path)
+        logging.info(f"Removed existing folder at {folder_path}")
+
+    # Ensure the directory exists
+    os.makedirs(folder_path)
+    logging.info(f"Created directory at {folder_path}")
+
+    # Create an empty FAISS index and save it as a placeholder
+    dimension = index_shape
+    index = faiss.IndexFlatL2(dimension)  # Using L2 distance for placeholder
+    faiss.write_index(index, faiss_file_path)
+    logging.info(f"Created placeholder FAISS index file at {faiss_file_path}")
 
     # Check if the labels file exists, create it if not
-    if not os.path.isfile(labels_file_path):
-        with open(labels_file_path, 'w') as f:
-            f.write("")  # Create an empty file
-        logging.info(f"Created empty labels file at {labels_file_path}")
+    with open(labels_file_path, 'w') as f:
+        f.write("")  # Create an empty file
+    logging.info(f"Created empty labels file at {labels_file_path}")
 
     return faiss_file_path, labels_file_path

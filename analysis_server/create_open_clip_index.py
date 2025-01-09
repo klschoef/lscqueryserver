@@ -23,8 +23,7 @@ def main():
     clip_context = ClipContext(args.model_name, args.model_weights)
     store_at_end = args.store_at_end.lower() in ['true', '1', 't', 'y', 'yes']
 
-    prepare_folder_and_files(args.faiss_folder)
-    index_context = IndexContext(args.faiss_folder)
+    index_context = None
 
     print(f"Writing results to '{args.faiss_folder}'...")
     # Define the search pattern based on recursive option
@@ -37,24 +36,27 @@ def main():
         total_amount += 1
 
     # Iterate through all images in the specified folder
-    for filename in glob.iglob(search_pattern, recursive=True):
-        print(f"Processing: {filename}")
-        try:
-            relpath = os.path.relpath(filename, args.input_folder)
-            print(f"Processing: {relpath}")
+    with torch.no_grad():
+        for filename in glob.iglob(search_pattern, recursive=True):
+            try:
+                relpath = os.path.relpath(filename, args.input_folder)
+                print(f"Processing: {relpath}")
 
-            # Load and preprocess the image
-            image = clip_context.preprocess(Image.open(filename)).unsqueeze(0).to(clip_context.device)
+                # Load and preprocess the image
+                image = clip_context.preprocess(Image.open(filename)).unsqueeze(0).to(clip_context.device)
 
-            # Encode image features
-            with torch.no_grad():
+                # Encode image features
                 image_features = clip_context.model.encode_image(image).cpu().numpy()
+                if index_context is None:
+                    print(f"Creating index... with size {image_features.shape[1]}")
+                    prepare_folder_and_files(args.faiss_folder, image_features.shape[1])
+                    index_context = IndexContext(args.faiss_folder)
                 index_context.add_new_entry(image_features, relpath, store=not store_at_end)
 
-            counter += 1
-            print(f"Processed {counter}/{total_amount} images.")
-        except Exception as e:
-            print(f"Error processing '{filename}': {e}")
+                counter += 1
+                print(f"Processed {counter}/{total_amount} images.")
+            except Exception as e:
+                print(f"Error processing '{filename}': {e}")
 
     print("Storing index...")
     if store_at_end:
