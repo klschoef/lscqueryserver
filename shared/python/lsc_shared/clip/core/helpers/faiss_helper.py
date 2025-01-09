@@ -99,3 +99,28 @@ def load_clip_features(folder_path):
     logging.info(f"Loaded {len(labels)} labels")
 
     return index, labels
+
+def prepare_folder_and_files(folder_path, index_shape=1024):
+    # Define the file paths using the helper function
+    faiss_file_path, labels_file_path = get_faiss_and_label_paths(folder_path)
+
+    # Ensure the directory exists
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+        logging.info(f"Created directory at {folder_path}")
+
+    # Check if the FAISS index file exists, create a placeholder if not
+    if not os.path.isfile(faiss_file_path):
+        # Create an empty FAISS index and save it as a placeholder
+        dimension = index_shape
+        index = faiss.IndexFlatL2(dimension)  # Using L2 distance for placeholder
+        faiss.write_index(index, faiss_file_path)
+        logging.info(f"Created placeholder FAISS index file at {faiss_file_path}")
+
+    # Check if the labels file exists, create it if not
+    if not os.path.isfile(labels_file_path):
+        with open(labels_file_path, 'w') as f:
+            f.write("")  # Create an empty file
+        logging.info(f"Created empty labels file at {labels_file_path}")
+
+    return faiss_file_path, labels_file_path

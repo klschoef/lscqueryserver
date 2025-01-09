@@ -1,10 +1,11 @@
 import torch
-import open_clip
 from PIL import Image
 import os
 import glob
-import csv
 import argparse
+from lsc_shared.clip.core.clip_context import ClipContext
+from lsc_shared.clip.core.index_context import IndexContext
+from lsc_shared.clip.core.helpers.faiss_helper import prepare_folder_and_files
 
 def main():
     """
@@ -13,53 +14,45 @@ def main():
     # Parse command-line arguments
     parser = argparse.ArgumentParser(description="Extract image features using OpenCLIP.")
     parser.add_argument("input_folder", help="Path to the folder containing images.")
-    parser.add_argument("output_prefix", help="Prefix for the output CSV file.")
+    parser.add_argument("faiss_folder", help="Path to faiss folder, which should be created")
     parser.add_argument("--model-name", default="ViT-H-14", help="Model name to use (default: 'ViT-H-14').")
     parser.add_argument("--model-weights", default="laion2b_s32b_b79k", help="Pretrained weights to use (default: 'laion2b_s32b_b79k').")
     args = parser.parse_args()
 
-    # Set device: use CUDA if available, otherwise CPU
-    device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
+    clip_context = ClipContext(args.mode_name, args.model_weights)
 
-    # Load the model and preprocessing pipeline
-    print(f"Loading model '{args.model_name}' with weights '{args.model_weights}'...")
-    model, _, preprocess = open_clip.create_model_and_transforms(
-        args.model_name,
-        pretrained=args.model_weights,
-        device=device
-    )
+    prepare_folder_and_files(args.faiss_folder)
+    index_context = IndexContext(args.faiss_folder)
 
-    # Create output CSV file
-    output_file = f"{args.output_prefix}-{args.model_name}_{args.model_weights}.csv"
-    print(f"Writing results to '{output_file}'...")
-    with open(output_file, 'w', newline='') as csvfile:
-        writer = csv.writer(csvfile, delimiter=',')
+    print(f"Writing results to '{args.faiss_folder}'...")
+    # Define the search pattern based on recursive option
+    search_pattern = os.path.join(args.input_folder, '**', '*.jpg')
 
-        # Define the search pattern based on recursive option
-        search_pattern = os.path.join(args.input_folder, '**', '**', '*.jpg')
+    counter = 0
+    total_amount = 0
+    print("Counting images...")
+    for _ in glob.iglob(search_pattern, recursive=True):
+        total_amount += 1
 
-        counter = 0
+    # Iterate through all images in the specified folder
+    for filename in glob.iglob(search_pattern, recursive=True):
+        print(f"Processing: {filename}")
+        try:
+            relpath = os.path.relpath(filename, args.input_folder)
+            print(f"Processing: {relpath}")
 
-        # Iterate through all images in the specified folder
-        for filename in glob.iglob(search_pattern, recursive=True):
-            print(f"Processing: {filename}")
-            try:
-                relpath = os.path.relpath(filename, args.input_folder)
-                print(f"Processing: {relpath}")
+            # Load and preprocess the image
+            image = clip_context.preprocess(Image.open(filename)).unsqueeze(0).to(clip_context.device)
 
-                # Load and preprocess the image
-                image = preprocess(Image.open(filename)).unsqueeze(0).to(device)
+            # Encode image features
+            with torch.no_grad():
+                image_features = clip_context.model.encode_image(image).cpu().numpy()
+                index_context.add_new_entry(image_features, relpath)
 
-                # Encode image features
-                with torch.no_grad():
-                    image_features = model.encode_image(image).cpu().squeeze(0).tolist()
-
-                # Write relative path and features to CSV
-                writer.writerow([relpath] + image_features)
-                counter += 1
-                print(f"Processed {counter} images.")
-            except Exception as e:
-                print(f"Error processing '{filename}': {e}")
+            counter += 1
+            print(f"Processed {counter}/{total_amount} images.")
+        except Exception as e:
+            print(f"Error processing '{filename}': {e}")
 
     print("Processing complete.")
 

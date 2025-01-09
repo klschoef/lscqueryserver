@@ -40,7 +40,7 @@ writer = csv.writer(csvfile, delimiter=',')
 image_suffix = args.image_suffix
 
 print(f"iterate through filenames ...")
-for filename in glob.iglob(rootdir + f'**/**/*.{image_suffix}', recursive=True):
+for filename in glob.iglob(rootdir + f'**/*.{image_suffix}', recursive=True):
     basename = os.path.basename(filename)
     relpath = os.path.relpath(filename, rootdir)
     print(filename)
