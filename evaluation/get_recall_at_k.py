@@ -20,6 +20,8 @@ def main():
 
     csv_output = []
 
+
+
     # add header labels
     csv_output.append(["Hint"]+[f"R@{k}" for k in args.k_values])
 

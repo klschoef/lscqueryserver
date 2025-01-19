@@ -35,6 +35,9 @@ class QPTClip(QueryPartTransformerBase):
             clip_response = await clip_connection.query(query, message, clip_page_size, clip_page_size)
             if clip_response.results:
                 variant_results.append(clip_response.results)
+            returned_clip_config = clip_response.remote_response.get("clip_config")
+            if returned_clip_config:
+                debug_info["clip_config"] = returned_clip_config
 
         await client.send_progress_step("Combine Clip ...")
         # Transform the results

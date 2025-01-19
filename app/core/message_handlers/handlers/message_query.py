@@ -14,6 +14,7 @@ class MessageQuery(MessageBase):
 
     async def handle(self, client_request, client):
         query = client_request.content.get('query')
+        activate_caching = client_request.content.get('activate_caching', True)
         debug_info = {}
         query_dicts = client_request.content.get("query_dicts")
         query_request_hash = HashUtil.hash_dict({"query_dicts": query_dicts, "query": query})
@@ -27,7 +28,7 @@ class MessageQuery(MessageBase):
             skip = (selected_page - 1) * results_per_page
 
             # check if the query is the same (then we can use caching, because just the page is different)
-            if query_request_hash not in client.cached_results:
+            if activate_caching and query_request_hash not in client.cached_results:
                 client.cached_results = {query_request_hash: True}
 
             if len(query_dicts) == 1:

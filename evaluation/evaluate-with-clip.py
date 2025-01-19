@@ -12,6 +12,7 @@ parser = argparse.ArgumentParser(description='Convert the LSC23 file to JSON.')
 parser.add_argument('topic_json_file', help='Topic File in JSON format.')
 parser.add_argument('faiss_folder', help='Index file to load the faiss index.')
 parser.add_argument('--model_name', default="ViT-H-14", help='Model name like "ViT-H-14"')
+parser.add_argument('--output_file_prefix', default="", help='Output file prefix')
 parser.add_argument('--pretrained_name', default="laion2b_s32b_b79k", help='Pretrained model name like "laion2b_s32b_b79k"')
 args = parser.parse_args()
 
@@ -62,7 +63,7 @@ def main():
     print(f"evaluation done.")
     print(f"results: {results}")
     # save results to json file with model name and pretrained name
-    result_file = f"results/results_{args.model_name}_{args.pretrained_name}.json"
+    result_file = f"results/results_{args.output_file_prefix}_{args.model_name}_{args.pretrained_name}.json"
     with open(result_file, 'w') as json_file:
         json.dump(results, json_file, indent=4)
 

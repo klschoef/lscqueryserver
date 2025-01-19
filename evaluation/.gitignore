@@ -5,3 +5,5 @@ topic_files/*
 !topic_files/lsc-full-topics.json
 
 venv
+
+**/*.lsceval/

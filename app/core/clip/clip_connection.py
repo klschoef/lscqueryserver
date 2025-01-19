@@ -40,6 +40,17 @@ class ClipConnection:
         # just the query and the pagination from message)
         pass
 
+    async def query_raw(self, content):
+        message = {
+            "content": content
+        }
+
+        clip_websocket = await self.get_clip_websocket()
+        await clip_websocket.send(json.dumps(message))
+        clip_response = await clip_websocket.recv()
+        clip_response = json.loads(clip_response)
+        return clip_response
+
     async def query_remote(self, query, message, results_per_page=None, max_results=None, event_type=None, pathprefix=None):
         # store the old values
         old_results_per_page = message.get("content").get("resultsperpage")

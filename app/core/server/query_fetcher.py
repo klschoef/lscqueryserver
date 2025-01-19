@@ -10,10 +10,11 @@ class QueryFetcher:
     async def transform_to_mongo_query(query_dict, client, client_request, debug_info):
         mongo_query = {"$and": []}
         query_hash = HashUtil.hash_dict(query_dict)
+        activate_caching = client_request.content.get('activate_caching', True)
         for transformer in default_mongodb_query_part_transformers:
             if transformer.should_use(query_dict):
                 cache_key = f"{client.connection_id}_{query_hash}_{transformer.__class__.__name__}"
-                if transformer.__class__.__name__ == "QPTClip" and cache_key in client.cached_results:
+                if activate_caching and transformer.__class__.__name__ == "QPTClip" and cache_key in client.cached_results:
                     if "$and" not in mongo_query:
                         mongo_query["$and"] = []
                     mongo_query["$and"].append(client.cached_results.get(cache_key))
@@ -35,7 +36,7 @@ class QueryFetcher:
                 else:
                     transformer.transform(mongo_query, query_dict, debug_info,  **kwargs)
 
-                if transformer.__class__.__name__ == "QPTClip" and mongo_query.get("$and"):
+                if activate_caching and transformer.__class__.__name__ == "QPTClip" and mongo_query.get("$and"):
                     client.cached_results[cache_key] = mongo_query.get("$and")[-1]
 
         if len(mongo_query["$and"]) == 0:

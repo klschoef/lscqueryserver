@@ -1,0 +1,16 @@
+from core.message_handlers.base.message_base import MessageBase
+
+
+class MessageChangeFaiss(MessageBase):
+
+    def should_handle(self, client_request):
+        return client_request.type == "change_faiss"
+
+    async def handle(self, client_request, client):
+        clip_connection = client.clip_connection
+        clip_response = await clip_connection.query_raw({
+            "type": "faiss_change",
+            "faiss_changes": client_request.content.get("faiss_changes", {})
+        })
+
+        return {"type": "change_faiss", "success": True, "response": clip_response}

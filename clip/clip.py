@@ -51,6 +51,7 @@ class EmptyIndexError:
 
 
 async def ws_handler(websocket):
+    global index_context, clip_context
     try:
         while True:
             message = await websocket.recv()
@@ -116,8 +117,59 @@ async def ws_handler(websocket):
                     })
                     await websocket.send(tmp)
                     return
+                elif event_type == 'faiss_change':
+                    # change the faiss index and models
+                    logging.info('change faiss index and models ...')
+                    faiss_changes = event.get('faiss_changes', {})
+
+                    if faiss_changes.get("faiss_folder", args.faiss_folder) == index_context.faiss_folder and \
+                            faiss_changes.get("model_name", args.model_name) == clip_context.model_name and \
+                            faiss_changes.get("weights_name", args.weights_name) == clip_context.weights_name:
+                        logging.info('faiss index and model are already loaded')
+                        await websocket.send(json.dumps({
+                            'type': 'change_faiss',
+                            'message': 'faiss index and model are already loaded',
+                            'success': True
+                        }))
+                        return
+
+                    try:
+                        index_context = IndexContext(faiss_changes.get("faiss_folder", args.faiss_folder))
+                        clip_context = ClipContext(
+                            faiss_changes.get("model_name", args.model_name),
+                            faiss_changes.get("weights_name", args.weights_name)
+                        )
+
+                        await websocket.send(json.dumps({
+                            'type': 'change_faiss',
+                            'message': 'faiss index and model changed',
+                            'success': True
+                        }))
+                        return
+                    except Exception as e:
+                        await websocket.send(json.dumps({
+                            'type': 'change_faiss',
+                            'message': str(e),
+                            'success': False
+                        }))
+                        return
+                elif event_type == 'faiss_info':
+                    # change the faiss index and models
+                    logging.info('get info about the current loaded faiss config ...')
+
+                    info = {
+                        "faiss_path": index_context.faiss_folder,
+                        "model_name": clip_context.model_name,
+                        "weights_name": clip_context.weights_name,
+                    }
+
+                    await websocket.send(json.dumps({
+                        'type': 'faiss_info',
+                        'info': info
+                    }))
+                    return
                 elif event['type'] == 'textquery':
-                    input = open_clip.tokenize(event['query']).to(clip_context.device)
+                    input = clip_context.tokenizer(event['query']).to(clip_context.device)
                     logging.info(input.shape)
                     text_features = clip_context.model.encode_text(input).cpu()
                     logging.info(text_features.shape)
@@ -159,7 +211,19 @@ async def ws_handler(websocket):
                     logging.info('file-similarity search finished')
 
             kfresults, kfresultsidx, kfscores = filter_and_label_results(ids, distances, index_context.get_datalabels(), results_per_page, selected_page)
-            results = {'num':len(kfresults), 'clientId': clientId, 'totalresults':max_results, 'results':kfresults, 'resultsidx':kfresultsidx, 'scores':kfscores }
+            results = {
+                'num':len(kfresults),
+                'clientId': clientId,
+                'totalresults':max_results,
+                'results':kfresults,
+                'resultsidx':kfresultsidx,
+                'scores':kfscores }
+            if event['returnCLIPConfig']:
+                results["clip_config"] = {
+                    "faiss_folder": index_context.faiss_folder,
+                    "model_name": clip_context.model_name,
+                    "weights_name": clip_context.weights_name
+                }
             tmp = json.dumps(results)
             #logging.info(tmp)
             await websocket.send(tmp)

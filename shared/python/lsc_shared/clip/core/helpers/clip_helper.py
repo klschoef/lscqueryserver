@@ -31,7 +31,7 @@ def filter_and_label_results(ids, distances, labels, resultsPerPage, selectedPag
 
 
 def get_clip_features_from_text(text, clip_context):
-    inp = open_clip.tokenize(text).to(clip_context.device)
+    inp = clip_context.tokenizer(text).to(clip_context.device)
     return clip_context.model.encode_text(inp).cpu()
 
 def clip_text_search(text, index_context, clip_context, max_results, results_per_page=None, selected_page=1):

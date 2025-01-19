@@ -1,4 +1,6 @@
+from core.message_handlers.handlers.message_change_faiss import MessageChangeFaiss
 from core.message_handlers.handlers.message_concepts import MessageConcepts
+from core.message_handlers.handlers.message_faiss_info import MessageFaissInfo
 from core.message_handlers.handlers.message_metadata import MessageMetadata
 from core.message_handlers.handlers.message_objects import MessageObjects
 from core.message_handlers.handlers.message_places import MessagePlaces
@@ -11,5 +13,7 @@ default_message_handlers = [
     MessageConcepts(),
     MessagePlaces(),
     MessageTexts(),
-    MessageQuery()
+    MessageQuery(),
+    MessageChangeFaiss(),
+    MessageFaissInfo()
 ]
