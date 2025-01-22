@@ -9,113 +9,67 @@ import asyncio
 import websockets
 from core.models.config import Config
 from core.stages.steps_stage import StepsStage
+from core.stages.summary_stage import SummaryStage
 from core.utils.file_util import get_project_related_file_path
+import yaml
 
-logging.basicConfig(level=logging.DEBUG)
+class CustomFormatter(logging.Formatter):
+    grey = "\x1b[38;21m"
+    green = "\x1b[32m"
+    yellow = "\x1b[33m"
+    red = "\x1b[31m"
+    bold_red = "\x1b[31;1m"
+    reset = "\x1b[0m"
+
+    FORMATS = {
+        logging.DEBUG: grey + "%(asctime)s - %(levelname)s - %(message)s" + reset,
+        logging.INFO: green + "%(asctime)s - %(levelname)s - %(message)s" + reset,
+        logging.WARNING: yellow + "%(asctime)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s" + reset,
+        logging.ERROR: red + "%(asctime)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s" + reset,
+        logging.CRITICAL: bold_red + "%(asctime)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s" + reset
+    }
+
+    def format(self, record):
+        log_fmt = self.FORMATS.get(record.levelno)
+        formatter = logging.Formatter(log_fmt, "%Y-%m-%d %H:%M:%S")
+        return formatter.format(record)
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+ch.setFormatter(CustomFormatter())
+logger.addHandler(ch)
 
 parser = argparse.ArgumentParser(description='')
 parser.add_argument('project_folder', help='Path to project folder')
-parser.add_argument('--config_file_name', default='config.json', help='Name of the config file')
+parser.add_argument('--config_file_name', default='config.yml', help='Name of the config file')
 args = parser.parse_args()
 loop = asyncio.get_event_loop()
 
 def main():
     config_file_path = f"{args.project_folder}/{args.config_file_name}"
     print(f"load config file: {config_file_path} ...")
-    config_json = None
-    # load the json file
-    with open(config_file_path) as f:
-        config_json = json.load(f)
-
-    if config_json is None:
-        print(f"Error: could not load config file {config_file_path}")
+    config_data = None
+    # load the config file
+    try:
+        with open(config_file_path, 'r') as f:
+            config_data = yaml.safe_load(f)
+    except Exception as e:
+        print(f"Error: could not load config file {config_file_path}: {e}")
         exit(1)
 
-    config = Config.from_json(config_json, project_folder=args.project_folder)
+    config = Config.from_json(config_data, project_folder=args.project_folder)
 
     stages = [
         StepsStage(),
+        SummaryStage()
     ]
 
     for stage in stages:
         stage.run(config)
 
-    summary = [["type", "name", "model", "weight", "topic", "r@k summary"]]
-    k_values = [1, 3, 5, 10, 20, 50, 100]
-    include_hints = [0, 1, 2, 3, 4, 5]
-    for step in config.steps:
-        folder_name = f"results/single_results/{step.name}"
-        for topic_name in [t.split("/")[-1] for t in config.topic_files]:
-            single_results_path = get_project_related_file_path(config.project_folder, f"{folder_name}/{topic_name}")
-            # find the json file in the folder
-            json_file = None  # Initialize json_file variable
-            for file in os.listdir(single_results_path):
-                if file.endswith(".json"):
-                    json_file = os.path.join(single_results_path, file)
-                    break  # Stop the search once the first json file is found
-
-            if json_file:
-                # Code to process the JSON file
-                print(f"Processing {json_file}")
-                summary_entry = ["clip", step.name, step.faiss.model, step.faiss.weights, topic_name]
-
-                with open(json_file, 'r') as file:
-                    data = json.load(file)
-                    csv_output = []
-                    for hint_index in include_hints:
-                        csv_row = []
-                        #csv_row.append(f"Hint-{hint_index+1}")
-                        for k in k_values:
-                            csv_row.append(get_mean_recall_at_k_for_all_results(data, hint_index, k))
-                        csv_output.append(csv_row)
-
-                    csv_summary = 0
-                    hints_amount = len(csv_output)
-                    for hint in range(hints_amount,0,-1):
-                        for i in range(1, len(k_values)+1):
-                            csv_summary += csv_output[hints_amount-hint][i-1]*hint/i
-
-                    summary_entry.append(csv_summary)
-                summary.append(summary_entry)
-            else:
-                print(f"No JSON file found in {single_results_path}")
-
-    logging.info(f"calc summaries: {summary}")
-    print("\n".join([",".join([str(x) for x in row]) for row in summary]))
-
-
-def get_mean_recall_at_k_for_all_results(dict_array, hint_index, k):
-    total = 0
-    for query in dict_array:
-        total += get_recall_at_k_for_quest_results(query, hint_index, k)
-
-    return total / len(dict_array)
-
-
-"""
-get the recall at k value for one single query with a given hint index. Returns 1 (found) or 0 (not found in the recall@k)
-    {
-        "query_name": "LSC23-KIS07",
-        "recall_per_hint": [
-            63,
-            null,
-            40,
-            5,
-            1,
-            2
-        ]
-    },
-    
-"""
-
-
-def get_recall_at_k_for_quest_results(query, hint_index, k):
-    found_index = query.get('recall_per_hint')[hint_index]
-
-    if found_index is None:
-        return 0
-
-    return 1 if found_index <= k else 0
 
 
 if __name__ == '__main__':

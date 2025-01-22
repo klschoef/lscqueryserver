@@ -52,6 +52,8 @@ class QPTGPT(QueryPartTransformerBase):
             search_query = f"({exact_match_query} OR {fuzzy_match_query})"
 
         solr_url = settings.SOLR_URL
+        solr_core = kwargs.get("message", {}).get("content", {}).get("solrCore", settings.SOLR_DEFAULT_CORE)
+        solr_url = f"{solr_url}/{solr_core}"
         message = kwargs.get("message")
         solr_page_size = message.get("content").get("solrPageSize") or 5000
         res = SolrUtil.search_entries(search_query, solr_url, 0, solr_page_size)
