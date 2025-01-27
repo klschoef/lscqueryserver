@@ -29,6 +29,7 @@ load_dotenv(dotenv_path)
 parser = argparse.ArgumentParser(description="OpenCLIP Search Server")
 parser.add_argument('--keyframe_base_root', default=os.getenv("KEYFRAME_BASE_ROOT", "/images"), help='Base path to the images (keyframes)')
 parser.add_argument('--faiss_folder', default=os.getenv("FAISS_FOLDER"), help='Path to the FAISS folder')
+parser.add_argument('--create_faiss_folder', default=False, help='Create faiss folder if it doesn\'t exist')
 parser.add_argument('--ws_port', default=int(os.getenv("FAISS_WS_PORT", "8002")), help='Websocket Port')
 parser.add_argument('--image_server_path', default=os.getenv("FAISS_IMAGE_SERVER_PATH", "http://extreme00.itec.aau.at/lifexplore"), help='Base path to the image server')
 parser.add_argument('--image_server_timeout', default=int(os.getenv("FAISS_IMAGE_SERVER_TIMEOUT", "5")), help='Timeout for image server requests')
@@ -37,7 +38,7 @@ parser.add_argument('--weights_name', default=os.getenv("WEIGHTS_NAME", "laion2b
 args = parser.parse_args()
 
 logging.info(f"try to load faiss_folder: {args.faiss_folder}")
-index_context = IndexContext(args.faiss_folder)
+index_context = IndexContext(args.faiss_folder, create_if_not_exists=args.create_faiss_folder)
 
 clip_context = ClipContext(args.model_name, args.weights_name)
 
@@ -71,7 +72,7 @@ async def ws_handler(websocket):
                     img_path = os.path.join(args.keyframe_base_root, filepath)
                     logging.info(f'try to load {img_path} ...')
                     labels = index_context.get_datalabels()
-                    if labels is not None and index_context.get_datalabels().str.contains(filepath).any():
+                    if labels is not None and filepath in labels:
                         await websocket.send(json.dumps({'error': f'file {img_path} already indexed'}))
                         return
 
@@ -90,13 +91,12 @@ async def ws_handler(websocket):
                     index_context.add_new_entry(image_features, filepath)
 
                     # fetch index
-                    indicies = index_context.get_datalabels()[index_context.get_datalabels().str.contains(filepath)].index.tolist()
-                    if len(indicies) == 0:
+                    if filepath not in index_context.get_datalabels():
                         await websocket.send(json.dumps({'error': 'an error occured, the file is not in the index after adding it!'}))
                         return
 
                     l2_to_last_one = None
-                    added_line_row = indicies[0]
+                    added_line_row = index_context.get_datalabels().index(filepath)
                     if added_line_row > 0:
                         added_entry_index_list = index_context.get_index().reconstruct(added_line_row).tolist()
                         last_entry_index_list = index_context.get_index().reconstruct(added_line_row-1).tolist()
@@ -218,7 +218,7 @@ async def ws_handler(websocket):
                 'results':kfresults,
                 'resultsidx':kfresultsidx,
                 'scores':kfscores }
-            if event['returnCLIPConfig']:
+            if event.get('returnCLIPConfig'):
                 results["clip_config"] = {
                     "faiss_folder": index_context.faiss_folder,
                     "model_name": clip_context.model_name,

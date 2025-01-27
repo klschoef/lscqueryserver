@@ -6,10 +6,11 @@ from lsc_shared.clip.core.helpers.faiss_helper import load_clip_features, get_fa
 logging.basicConfig(level=logging.DEBUG)
 
 class IndexContext:
-    def __init__(self, faiss_folder):
+    def __init__(self, faiss_folder, create_if_not_exists=False):
         self.faiss_folder = faiss_folder
         self._index = None
         self._datalabels = None
+        self._create_if_not_exists = create_if_not_exists
         self._faiss_path, self._labels_path = get_faiss_and_label_paths(faiss_folder)
 
         # try to load clip features
@@ -30,7 +31,7 @@ class IndexContext:
 
     def load_clip_features(self):
         try:
-            self._index, self._datalabels = load_clip_features(folder_path=self.faiss_folder)
+            self._index, self._datalabels = load_clip_features(folder_path=self.faiss_folder, create_if_not_exists=self._create_if_not_exists)
         except EmptyIndexException as e:
             logging.error(e)
             self._index = None

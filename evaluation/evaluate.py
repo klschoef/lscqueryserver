@@ -71,6 +71,5 @@ def main():
         stage.run(config)
 
 
-
 if __name__ == '__main__':
     main()

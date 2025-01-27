@@ -9,7 +9,7 @@ from datetime import datetime
 from PIL import Image
 
 class InitialPipeline(BasePipeline):
-    def process(self, image, image_document, mongo_collection, *args, **kwargs) -> tuple:
+    def process(self, image, image_document, mongo_collection, remove_original_image=True, *args, **kwargs) -> tuple:
         initial_image_path, image_storage, upload_folder_name, upload_path = self.get_and_validate_kwargs(kwargs)
 
 
@@ -33,6 +33,8 @@ class InitialPipeline(BasePipeline):
             if existing_image_document:
                 print(f"Image with checksum {original_checksum} already exists in the database.")
                 existing_image = open_image_with_fixed_orientation(get_image_storage_path(upload_path, existing_image_document.get("filename")))
+                if remove_original_image:
+                    os.remove(initial_image_path)
                 return existing_image, existing_image_document
 
             resized_img = resize_image(img)
@@ -73,6 +75,9 @@ class InitialPipeline(BasePipeline):
             }
 
             mongo_collection.insert_one(document)
+
+            if remove_original_image:
+                os.remove(initial_image_path)
 
             return resized_img, document
             # missing: places, concepts, objects, texts, mscaption, heart_rate, reduced, l2dist, location_metadata, gpt_description

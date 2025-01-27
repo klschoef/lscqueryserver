@@ -4,6 +4,7 @@ import open_clip
 import pandas as pd
 import logging
 import faiss
+import math
 
 logging.basicConfig(level=logging.DEBUG)
 

@@ -78,13 +78,17 @@ def append_labels_to_label_file(labels, folder_path):
 
     logging.info(f"Appended {len(labels)} labels to {labels_file_path}")
 
-def load_clip_features(folder_path):
+def load_clip_features(folder_path, create_if_not_exists=False):
     # Define the file paths for the index and labels within the specified folder
     faiss_file_path, labels_file_path = get_faiss_and_label_paths(folder_path)
 
     # Load the FAISS index
     if not os.path.isfile(faiss_file_path):
-        raise FileNotFoundError(f"The FAISS index file {faiss_file_path} does not exist")
+
+        if create_if_not_exists:
+            prepare_folder_and_files(folder_path)
+        else:
+            raise FileNotFoundError(f"The FAISS index file {faiss_file_path} does not exist")
 
     index = faiss.read_index(faiss_file_path)
     logging.info(f"Loaded FAISS index with {index.ntotal} vectors")
