@@ -4,6 +4,7 @@ import datetime
 import torch
 from facenet_pytorch import MTCNN
 from PIL import Image, ImageFilter
+from core.helpers.image_helper import get_image_storage_path
 
 load_dotenv()
 
@@ -20,7 +21,10 @@ class BlurFacesPipeline(BasePipeline):
     def process(self, image, image_document, mongo_collection, *args, **kwargs) -> tuple:
         current_time = datetime.datetime.now()
 
-        self.blur_faces(image_path=image.filename, output_path=image.filename)
+        # Get the path to the image
+        image_path = get_image_storage_path(kwargs.get("image_storage"), image_document.get("filepath"))
+
+        self.blur_faces(image_path=image_path, output_path=image_path)
 
         mongo_collection.update_one({'_id': image_document.get('_id')}, {'$set': {
             'metadata.blur_faces_metadata': {

@@ -4,25 +4,25 @@ import argparse
 from dotenv import load_dotenv
 import os
 
+from core.helpers.loading_helper import discover_pipeline_classes, parse_pipelines_from_string
 from core.helpers.mongo_helper import get_mongo_collection
-from core.processing_pipelines.initial_pipeline import InitialPipeline
-from core.processing_pipelines.open_clip_pipeline import OpenClipPipeline
-from core.processing_pipelines.blip2_pipeline import Blip2Pipeline
 
 def main():
+    # Path to the directory containing pipeline modules
+    pipeline_directory = 'core/processing_pipelines'
+    # Discover all available class names in the pipeline directory
+    available_classes = discover_pipeline_classes(pipeline_directory)
     # Parse command-line arguments
     parser = argparse.ArgumentParser(description="Process an image to extract metadata and resize.")
     parser.add_argument('image_path', help='Path to the input image or a folder with images')
     parser.add_argument('--image-storage', default='/images', help='Directory to the images (the script will save images in an own folder "uploads" within that folder)')
     parser.add_argument('--upload-folder-name', default='uploads', help='Name of the subfolder where the images will be saved')
     parser.add_argument('--watch-folder', action='store_true', help='Watch the folder for new images')
+    parser.add_argument('--class-names', type=str, default="InitialPipeline,OpenClipPipeline,BlurFacesPipeline", help=f'Comma-separated list of pipeline class names to import and use. Available classes: {", ".join(available_classes)}')
     parser.add_argument('--watch-interval', type=int, default=60, help='Interval in seconds to check for new images')
     args = parser.parse_args()
 
-    pipelines = [
-        InitialPipeline(),
-        OpenClipPipeline()
-    ]
+    pipelines = parse_pipelines_from_string(args.class_names)
 
     # Connect to MongoDB
     load_dotenv()

@@ -1,6 +1,7 @@
 import os
 
 import pandas as pd
+import numpy as np
 import logging
 import faiss
 from lsc_shared.clip.core.exceptions.empty_index_exception import EmptyIndexException
@@ -67,6 +68,10 @@ def save_faiss_index(index, folder_path):
     faiss.write_index(index, faiss_file_path)
     logging.info(f"Saved FAISS index with {index.ntotal} vectors to {faiss_file_path}")
 
+def remove_from_faiss_index(index, label_id):
+    id_array = np.array([label_id], dtype='int64')
+    index.remove_ids(id_array)
+
 def append_labels_to_label_file(labels, folder_path):
     # Define the file path for the labels within the specified folder
     faiss_file_path, labels_file_path = get_faiss_and_label_paths(folder_path)
@@ -77,6 +82,17 @@ def append_labels_to_label_file(labels, folder_path):
             file.write(f"{label}\n")
 
     logging.info(f"Appended {len(labels)} labels to {labels_file_path}")
+
+def save_label_file(labels, folder_path):
+    # Define the file path for the labels within the specified folder
+    faiss_file_path, labels_file_path = get_faiss_and_label_paths(folder_path)
+
+    # Save the labels
+    with open(labels_file_path, 'w') as file:
+        for label in labels:
+            file.write(f"{label}\n")
+
+    logging.info(f"Saved {len(labels)} labels to {labels_file_path}")
 
 def load_clip_features(folder_path, create_if_not_exists=False):
     # Define the file paths for the index and labels within the specified folder

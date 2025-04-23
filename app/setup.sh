@@ -20,7 +20,7 @@ python3 -m venv "$VENV_PATH"
 echo "Installing required packages..."
 # Activate the virtual environment
 source "$VENV_PATH/bin/activate"
-pip3 install -r ../requirements.txt
+pip3 install -r ./requirements.txt
 
 echo "Creating symbolic link for shared library ..."
 # Determine the Python version in the venv to find the correct path for site-packages

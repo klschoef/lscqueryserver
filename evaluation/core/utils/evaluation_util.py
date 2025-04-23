@@ -30,3 +30,10 @@ def get_recall_at_k_for_quest_results(query, hint_index, k):
         return 0
 
     return 1 if found_index <= k else 0
+
+def recall_at_k(ranks, num_of_relevant_items, k):
+    top_k = retrieved_items[:k]
+    relevant_in_top_k = [item for item in top_k if item in relevant_items]
+    if len(relevant_items) == 0:
+        return 0.0
+    return len(relevant_in_top_k) / len(relevant_items)

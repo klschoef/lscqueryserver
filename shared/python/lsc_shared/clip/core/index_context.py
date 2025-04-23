@@ -1,7 +1,8 @@
 import logging
 
+import numpy as np
 from lsc_shared.clip.core.exceptions.empty_index_exception import EmptyIndexException
-from lsc_shared.clip.core.helpers.faiss_helper import load_clip_features, get_faiss_and_label_paths, save_faiss_index, append_labels_to_label_file
+from lsc_shared.clip.core.helpers.faiss_helper import load_clip_features, get_faiss_and_label_paths, save_faiss_index, save_label_file, append_labels_to_label_file, remove_from_faiss_index
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -46,6 +47,20 @@ class IndexContext:
         if store:
             save_faiss_index(self._index, self.faiss_folder)
             append_labels_to_label_file([label], self.faiss_folder)
+
+    def remove_entry(self, label):
+        print("remove entry", label)
+        label_id = self.get_datalabels().index(label)
+
+        if self._index.ntotal != len(self._datalabels):
+            raise Exception("index and labels have different lengths!")
+
+        self._datalabels.remove(label)
+        # index.ntotal
+        remove_from_faiss_index(self._index, label_id)
+
+        save_faiss_index(self._index, self.faiss_folder)
+        save_label_file(self._datalabels, self.faiss_folder)
 
     def store_index(self):
         save_faiss_index(self._index, self.faiss_folder)

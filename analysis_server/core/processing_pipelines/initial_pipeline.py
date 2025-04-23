@@ -75,7 +75,6 @@ class InitialPipeline(BasePipeline):
             }
 
             mongo_collection.insert_one(document)
-
             if remove_original_image:
                 os.remove(initial_image_path)
 

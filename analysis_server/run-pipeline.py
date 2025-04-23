@@ -1,44 +1,18 @@
 from datetime import datetime
 
-import importlib
-
 import argparse
 from time import sleep
 
 from dotenv import load_dotenv
 from PIL import Image
 
+from core.helpers.loading_helper import discover_pipeline_classes, parse_pipelines_from_string
 from core.helpers.mongo_helper import get_mongo_collection
-from core.processing_pipelines.blip2_pipeline import Blip2Pipeline
 from pathlib import Path
 import os
 
-def to_camel_case(snake_str):
-    """Convert snake_case string to CamelCase string."""
-    components = snake_str.split('_')
-    return ''.join(x.title() for x in components)
+from core.helpers.parsing_helper import parse_datetime
 
-def to_snake_case(camel_str):
-    """Convert CamelCase string to snake_case string."""
-    snake_str = ''
-    for char in camel_str:
-        if char.isupper():
-            snake_str += '_' + char.lower()
-        else:
-            snake_str += char
-    return snake_str.lstrip('_')
-
-def discover_pipeline_classes(directory):
-    """Discover and return all pipeline class names in a given directory."""
-    class_names = []
-    # List all python files in the specified directory
-    for file in os.listdir(directory):
-        if file.endswith("_pipeline.py"):
-            # Remove '_pipeline.py' and convert to CamelCase
-            base_name = file[:-3]  # remove the suffix
-            class_name = to_camel_case(base_name)
-            class_names.append(class_name)
-    return class_names
 
 def main():
     # Path to the directory containing pipeline modules
@@ -49,23 +23,16 @@ def main():
     parser = argparse.ArgumentParser(description="Process an image to extract metadata and resize.")
     parser.add_argument('--image-storage', default='/images', help='Directory to the images')
     parser.add_argument('--class-names', type=str, default="BlurFacesPipeline,OpenClipPipeline", help=f'Comma-separated list of pipeline class names to import and use. Available classes: {", ".join(available_classes)}')
+    parser.add_argument('--update-after', type=parse_datetime, default=None, help='Update all entries after this timestamp (format: YYYY-MM-DD or YYYY-MM-DDTHH:MM)')
     args = parser.parse_args()
-    update_all_after_timestamp = datetime.now()
+    update_all_after_timestamp = args.update_after
 
     # Connect to MongoDB
     load_dotenv()
     images_collection = get_mongo_collection(os.getenv('MONGO_DB_URL'), os.getenv('MONGO_DB_DATABASE'))
 
     # load pipelines
-    class_names = args.class_names.split(',')
-    pipelines = []
-    for class_name in class_names:
-        # Convert CamelCase class name back to snake_case for module name
-        module_snake_name = to_snake_case(class_name)
-        module_name = f'core.processing_pipelines.{module_snake_name}'
-        class_module = importlib.import_module(module_name)
-        class_obj = getattr(class_module, class_name)
-        pipelines.append(class_obj())
+    pipelines = parse_pipelines_from_string(args.class_names)
 
     # Example of using pipelines
     print(f"Loaded {len(pipelines)} pipelines.")
@@ -75,7 +42,6 @@ def main():
     while True:
         error = False
         try:
-            # query_blip2 = {"$or": [{"blip2caption": {"$exists": False}}, {"blip2caption": None}]}
             size = images_collection.count_documents({})
             counter = 0
             for image_doc in images_collection.find({}):

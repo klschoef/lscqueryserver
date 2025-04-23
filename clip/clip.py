@@ -31,7 +31,7 @@ parser.add_argument('--keyframe_base_root', default=os.getenv("KEYFRAME_BASE_ROO
 parser.add_argument('--faiss_folder', default=os.getenv("FAISS_FOLDER"), help='Path to the FAISS folder')
 parser.add_argument('--create_faiss_folder', default=False, help='Create faiss folder if it doesn\'t exist')
 parser.add_argument('--ws_port', default=int(os.getenv("FAISS_WS_PORT", "8002")), help='Websocket Port')
-parser.add_argument('--image_server_path', default=os.getenv("FAISS_IMAGE_SERVER_PATH", "http://extreme00.itec.aau.at/lifexplore"), help='Base path to the image server')
+parser.add_argument('--image_server_path', default=os.getenv("FAISS_IMAGE_SERVER_PATH", "http://localhost:8122/lifexplore"), help='Base path to the image server')
 parser.add_argument('--image_server_timeout', default=int(os.getenv("FAISS_IMAGE_SERVER_TIMEOUT", "5")), help='Timeout for image server requests')
 parser.add_argument('--model_name', default=os.getenv("MODEL_NAME", "ViT-H-14"), help='Model Name')
 parser.add_argument('--weights_name', default=os.getenv("WEIGHTS_NAME", "laion2b_s32b_b79k"), help='Weights Name')
@@ -67,7 +67,14 @@ async def ws_handler(websocket):
 
             with torch.no_grad():
                 event_type = event.get('type', 'textquery')
-                if event_type == 'indexrequest':
+                if event_type == 'remove_image':
+                    filepath = event.get('filepath')
+                    index_context.remove_entry(filepath)
+                    img_path = os.path.join(args.keyframe_base_root, filepath)
+                    os.remove(img_path)
+                    await websocket.send(json.dumps({'success': True}))
+                    return
+                elif event_type == 'indexrequest':
                     filepath = event.get('filepath')
                     img_path = os.path.join(args.keyframe_base_root, filepath)
                     logging.info(f'try to load {img_path} ...')
