@@ -1,6 +1,8 @@
 # LifeXplore Backend System
 
-The **LifeXplore Backend System** is a modular project designed to process and evaluate queries using a WebSocket-based Python application (`lscqueryserver`) and several submodules. Use the [official LifeXplore frontend application](https://github.com/klschoef/lifexplore) or develop your own. Below is an overview of the system and its components.
+The **LifeXplore Backend System** is a modular project designed to process and evaluate queries using a WebSocket-based Python application (`lscqueryserver`) 
+and several submodules. Use the [official LifeXplore frontend application](https://github.com/klschoef/lifexplore) or develop your own. 
+For more details, refer to the [paper](https://dl.acm.org/doi/abs/10.1145/3643489.3661123). Below is an overview of the system and its components.
 
 ---
 
