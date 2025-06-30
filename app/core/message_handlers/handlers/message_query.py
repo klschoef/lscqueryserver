@@ -273,7 +273,8 @@ class MessageQuery(MessageBase):
                     "_id": "$date",
                     "filepath": {"$first": "$filepath"},
                     "datetime": {"$first": "$datetime"},
-                    "heart_rate": {"$first": "$heart_rate"}
+                    "heart_rate": {"$first": "$heart_rate"},
+                    "filename": {"$first": "$filename"}
                 }}
             ])
 
