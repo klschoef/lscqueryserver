@@ -1,0 +1,21 @@
+# Dedicated environment for CLIP + SigLIP2 FAISS index creation.
+# Keep this separate from app/analysis runtime deps to avoid torch/facenet conflicts.
+
+faiss-cpu~=1.8
+numpy~=1.24
+pandas~=2.0
+Pillow>=10,<12
+python-dotenv~=1.0.1
+psutil~=6.1.0
+requests>=2.31.0,<3
+websockets>=12.0,<14
+
+open-clip-torch~=2.24
+torch==2.5.1
+torchvision==0.20.1
+
+transformers==4.52.4
+tokenizers>=0.21,<0.22
+huggingface_hub>=0.30,<1
+sentencepiece>=0.2.0,<1
+protobuf>=5,<6
