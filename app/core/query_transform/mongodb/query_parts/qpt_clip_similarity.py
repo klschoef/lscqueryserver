@@ -15,7 +15,9 @@ class QPTClipSimilarity(QueryPartTransformerBase):
         clip_connection = kwargs.get("clip_connection")
         message = copy.deepcopy(kwargs.get("message"))
         message.get("content")["selectedpage"] = "1"
+        message.get("content")["queryDefaultModel"] = "clip"
         client = kwargs.get("client")
+        await clip_connection.ensure_query_model_loaded("clip", strict=False)
 
         query = query_dict.get("sim")
         clip_page_size = message.get("content").get("clipPageSize") or 5000

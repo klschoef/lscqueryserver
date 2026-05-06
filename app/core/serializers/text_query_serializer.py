@@ -8,6 +8,7 @@ class TextQuerySerializer:
     def text_query_to_dict(text_query, client_request, filters=default_filters):
         query_dict = {
             "clip": None,
+            "siglip2": None,
             "objects": [],
             "texts": [],
             "concepts": [],
@@ -25,6 +26,9 @@ class TextQuerySerializer:
         split_regex = r"^\|\°\^([^\s]+)\s(.*)"
 
         commands = {}
+        default_query_model = client_request.content.get("queryDefaultModel")
+        if default_query_model not in ["clip", "gpt", "siglip2"]:
+            default_query_model = "gpt" if client_request.content.get("useGPTasDefault") else "clip"
 
         for part in modified_query:
             if part.startswith("|°^"):
@@ -32,7 +36,7 @@ class TextQuerySerializer:
                 if find_results and len(find_results) == 1 and len(find_results[0]) == 2:
                     commands[find_results[0][0]] = find_results[0][1]
             else:
-                commands["gpt" if client_request.content.get("useGPTasDefault") else "clip"] = part.strip()
+                commands[default_query_model] = part.strip()
 
 
         # apply filters to get the query_dict from the text query

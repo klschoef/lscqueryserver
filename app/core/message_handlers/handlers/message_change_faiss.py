@@ -8,6 +8,7 @@ class MessageChangeFaiss(MessageBase):
 
     async def handle(self, client_request, client):
         clip_connection = client.clip_connection
+        clip_connection.loaded_clip_config = None
         clip_response = await clip_connection.query_raw({
             "type": "faiss_change",
             "faiss_changes": client_request.content.get("faiss_changes", {})

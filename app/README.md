@@ -25,6 +25,8 @@ Ensure Python 3.8 or higher is installed on your system.
     - `MONGO_DB_URL`: MongoDB connection URL.
     - `MONGO_DB_DATABASE`: MongoDB database name.
     - `CLIP_URL`: URL of the running CLIP server.
+    - `CLIP_FAISS_FOLDER`, `CLIP_MODEL_NAME`, `CLIP_WEIGHTS_NAME`: Optional default CLIP faiss/model config used for automatic switching.
+    - `SIGLIP2_FAISS_FOLDER`, `SIGLIP2_MODEL_NAME`, `SIGLIP2_WEIGHTS_NAME`: Optional SigLIP2 faiss/model config used for automatic switching.
     - `SOLR_URL`: URL of the SOLR server (if used).
     - Other parameters can be adjusted as needed.
 
@@ -107,6 +109,8 @@ The query string is a string that can be used to search for images or keyframes.
 It can be used to search for objects, texts, concepts, places, filenames, years, months, days, weekdays and querys with clip.
 Example: "I want to have images where a object car is visible on the left bottom of the image, with a score between 0.7 and 0.9".
 This can be reached with a query string like "-o car score:0.7+0.2 position:left-bottom".
+
+For SigLIP2 text search, use the command prefix form `-siglip2 your text query` (or set `queryDefaultModel=siglip2` in request content).
 
 Format: [free_text] [-[filter_char] [query_string]|[subquery]|[subquery]|...,[query_string]|[subquery]|[subquery]|...]
 

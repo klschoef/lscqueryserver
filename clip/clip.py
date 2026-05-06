@@ -65,6 +65,7 @@ async def ws_handler(websocket):
             selected_page = int(event.get('selectedpage', '1'))
             clientId = event.get('clientId')
 
+            query_vector_dim = None
             with torch.no_grad():
                 event_type = event.get('type', 'textquery')
                 if event_type == 'remove_image':
@@ -89,9 +90,7 @@ async def ws_handler(websocket):
                         await websocket.send(json.dumps({'error': f'file {img_path} not found'}))
                         return
 
-                    image = clip_context.preprocess(image).unsqueeze(0).to(clip_context.device)
-                    image_features = clip_context.model.encode_image(image)
-                    image_features = image_features.cpu().numpy()
+                    image_features = clip_context.encode_image_from_pil(image).numpy()
                     logging.info('features extracted')
 
                     logging.info('writing to faiss folder files ...')
@@ -117,7 +116,7 @@ async def ws_handler(websocket):
                         'clip_entry_metadata': {
                             'model_name': args.model_name,
                             'weights_name': args.weights_name,
-                            'clip_type': 'open_clip',
+                            'clip_type': 'siglip2' if clip_context.is_siglip2 else 'open_clip',
                             'l2_to_last_one': l2_to_last_one,
                             'added_line_row': added_line_row,
                         }
@@ -176,10 +175,16 @@ async def ws_handler(websocket):
                     }))
                     return
                 elif event['type'] == 'textquery':
-                    input = clip_context.tokenizer(event['query']).to(clip_context.device)
-                    logging.info(input.shape)
-                    text_features = clip_context.model.encode_text(input).cpu()
+                    text_features = clip_context.encode_text_query(event['query'])
                     logging.info(text_features.shape)
+                    query_vector_dim = int(text_features.shape[-1])
+                    index_dim = int(getattr(index_context.get_index(), "d", 0))
+                    if index_dim and query_vector_dim != index_dim:
+                        await websocket.send(json.dumps({
+                            'error': f'Embedding dimension mismatch: query={query_vector_dim}, index={index_dim}. '
+                                     f'Check that faiss_folder matches model_name/weights_name.'
+                        }))
+                        return
                     try:
                         distances, ids = search_in_index(text_features,index_context.get_index(), max_results)
                     except EmptyIndexError:
@@ -208,10 +213,16 @@ async def ws_handler(websocket):
                     if not image:
                         logging.info(f'could not load {img_path}')
                         continue
-                    image = clip_context.preprocess(image).unsqueeze(0).to(clip_context.device)
-                    image_features = clip_context.model.encode_image(image)
-                    image_features = image_features.cpu()
+                    image_features = clip_context.encode_image_from_pil(image)
                     logging.info('shape:',image_features.shape)
+                    query_vector_dim = int(image_features.shape[-1])
+                    index_dim = int(getattr(index_context.get_index(), "d", 0))
+                    if index_dim and query_vector_dim != index_dim:
+                        await websocket.send(json.dumps({
+                            'error': f'Embedding dimension mismatch: query={query_vector_dim}, index={index_dim}. '
+                                     f'Check that faiss_folder matches model_name/weights_name.'
+                        }))
+                        return
                     mylist = image_features[0].tolist()
                     logging.info('features extracted')
                     distances, ids = search_in_index(image_features, index_context.get_index(), max_results)
@@ -229,7 +240,11 @@ async def ws_handler(websocket):
                 results["clip_config"] = {
                     "faiss_folder": index_context.faiss_folder,
                     "model_name": clip_context.model_name,
-                    "weights_name": clip_context.weights_name
+                    "weights_name": clip_context.weights_name,
+                    "clip_type": "siglip2" if clip_context.is_siglip2 else "open_clip",
+                    "index_metric": "l2",
+                    "index_dim": int(getattr(index_context.get_index(), "d", 0)),
+                    "query_vector_dim": query_vector_dim
                 }
             tmp = json.dumps(results)
             #logging.info(tmp)
@@ -237,7 +252,7 @@ async def ws_handler(websocket):
     except ConnectionClosedOK:
         logging.info("Connection closed gracefully.")
     except Exception as e:
-        logging.info("Exception: ", str(e))
+        logging.info(f"Exception: {e}")
 
 async def run_ws(ws_port):
     async with websockets.serve(ws_handler, "", ws_port):

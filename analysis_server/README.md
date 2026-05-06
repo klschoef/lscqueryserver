@@ -105,6 +105,24 @@ python run-pipeline.py --image-storage ../../../backup/imgs/data --class-names B
 
 ---
 
+### **(Optional) Create a SigLIP2 FAISS Index**
+To generate a dedicated FAISS index for SigLIP2 embeddings from an image folder, use:
+```bash
+python create_siglip2_index.py <input_folder> <faiss_folder> --model-id google/siglip2-base-patch16-224
+```
+
+Example:
+```bash
+python create_siglip2_index.py ../../../backup/imgs/data ../../../backup/faiss/siglip2-base
+```
+
+Notes:
+- This creates a separate index for SigLIP2 (do not reuse OpenCLIP index files).
+- Supported image suffixes: `.jpg`, `.jpeg`, `.png`, `.webp`.
+- Use `--store-at-end True` (default) for better bulk indexing performance.
+
+---
+
 ## **Adding New Pipelines**
 To add new analysis logic, create a new pipeline in the `core/processing_pipelines` directory by inheriting from the `base_pipeline`. Pipelines are executed in the order they are passed to the script. **Important:** Always include `InitialPipeline` as the first pipeline for new uploads, as it handles resizing, metadata extraction, and database insertion.
 

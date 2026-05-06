@@ -13,12 +13,14 @@ from core.query_transform.mongodb.query_parts.qpt_hour import QPTHour
 from core.query_transform.mongodb.query_parts.qpt_month import QPTMonth
 from core.query_transform.mongodb.query_parts.qpt_objects import QPTObjects
 from core.query_transform.mongodb.query_parts.qpt_places import QPTPlaces
+from core.query_transform.mongodb.query_parts.qpt_siglip2 import QPTSigLIP2
 from core.query_transform.mongodb.query_parts.qpt_texts import QPTTexts
 from core.query_transform.mongodb.query_parts.qpt_weekday import QPTWeekday
 from core.query_transform.mongodb.query_parts.qpt_year import QPTYear
 
 default_mongodb_query_part_transformers = [
     QPTClip(),
+    QPTSigLIP2(),
     QPTObjects(),
     QPTHeartRate(),
     QPTTexts(),

@@ -133,3 +133,5 @@ hf-cache
 *.csv
 .venv
 *.faiss
+
+/faiss

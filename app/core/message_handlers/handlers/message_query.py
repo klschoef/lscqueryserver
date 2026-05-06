@@ -2,6 +2,7 @@ import re
 
 from pymongo import DESCENDING, ASCENDING
 
+from core import settings
 from core.message_handlers.base.message_base import MessageBase
 from core.serializers.text_query_serializer import TextQuerySerializer
 from core.server.query_fetcher import QueryFetcher
@@ -43,6 +44,17 @@ class MessageQuery(MessageBase):
 
     async def handle_single_query(self, query_dict, client_request, client, skip, results_per_page, debug_info):
         mongo_query = await QueryFetcher.transform_to_mongo_query(query_dict, client, client_request, debug_info)
+
+        if settings.BYPASS_MONGO:
+            fake_results = self._build_fake_results_from_mongo_query(mongo_query, skip, results_per_page)
+            return {
+                "num": len(fake_results),
+                "totalresults": len(self._extract_filepaths_from_mongo_query(mongo_query)),
+                "results": fake_results,
+                "debug_info": debug_info,
+                "requestId": client_request.content.get("requestId")
+            }
+
         total_results = client.db['images'].count_documents(mongo_query)
 
         query_mode = client_request.content.get("queryMode", "All Images")
@@ -61,6 +73,20 @@ class MessageQuery(MessageBase):
         return {"num": len(results), "totalresults": total_results, "results": results, "debug_info": debug_info, "requestId": client_request.content.get("requestId")}
 
     async def handle_temporal_query(self, query_dicts, client_request, client, skip, results_per_page, debug_info):
+        if settings.BYPASS_MONGO:
+            if len(query_dicts) == 0:
+                return {"num": 0, "totalresults": 0, "results": [], "debug_info": debug_info, "requestId": client_request.content.get("requestId")}
+            # In bypass mode, return direct FAISS filenames for the last temporal block.
+            mongo_query = await QueryFetcher.transform_to_mongo_query(query_dicts[-1], client, client_request, debug_info)
+            fake_results = self._build_fake_results_from_mongo_query(mongo_query, skip, results_per_page)
+            return {
+                "num": len(fake_results),
+                "totalresults": len(self._extract_filepaths_from_mongo_query(mongo_query)),
+                "results": fake_results,
+                "debug_info": debug_info,
+                "requestId": client_request.content.get("requestId")
+            }
+
         temporal_prefetch_mode = client_request.content.get("temporalPrefetchMode", True)
         temporal_db_prefetch_page_size = client_request.content.get("temporalDBPrefetchPageSize", 5000)
 
@@ -71,7 +97,7 @@ class MessageQuery(MessageBase):
 
             for index, query_dict in enumerate(query_dicts):
                 for key in query_dict.keys():
-                    if key == "clip" or key == "gpt" \
+                    if key == "clip" or key == "siglip2" or key == "gpt" \
                             or query_dict.get(key) is None \
                             or query_dict.get(key) == [] \
                             or query_dict.get(key) == "":
@@ -285,3 +311,29 @@ class MessageQuery(MessageBase):
         ])
 
         return aggregate_pipeline
+
+    def _extract_filepaths_from_mongo_query(self, mongo_query):
+        if not mongo_query:
+            return []
+        and_parts = mongo_query.get("$and", [])
+        for part in and_parts:
+            filepaths = part.get("filepath", {}).get("$in")
+            if isinstance(filepaths, list):
+                return filepaths
+        return []
+
+    def _build_fake_results_from_mongo_query(self, mongo_query, skip, results_per_page):
+        filepaths = self._extract_filepaths_from_mongo_query(mongo_query)
+        paged_filepaths = filepaths[skip:skip + results_per_page]
+        results = []
+        for filepath in paged_filepaths:
+            filename = filepath.split("/")[-1].split("\\")[-1]
+            date = filename[:8] if len(filename) >= 8 and filename[:8].isdigit() else "19700101"
+            results.append({
+                "filepath": filepath,
+                "filename": filename,
+                "date": date,
+                "datetime": 0,
+                "heart_rate": None
+            })
+        return results

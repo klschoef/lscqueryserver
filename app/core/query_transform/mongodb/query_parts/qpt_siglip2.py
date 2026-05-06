@@ -3,10 +3,11 @@ from core.query_transform.base.query_parts.query_part_transformer_base import Qu
 from core.utils.clip_variants_util import ClipVariantsUtil
 import copy
 
-class QPTClip(QueryPartTransformerBase):
+
+class QPTSigLIP2(QueryPartTransformerBase):
 
     def should_use(self, query_dict):
-        return bool(query_dict.get("clip")) and bool(query_dict.get("clip").get("query"))
+        return bool(query_dict.get("siglip2")) and bool(query_dict.get("siglip2").get("query"))
 
     def needed_kwargs(self):
         return ["clip_connection", "message", "client"]
@@ -15,35 +16,32 @@ class QPTClip(QueryPartTransformerBase):
         clip_connection = kwargs.get("clip_connection")
         message = copy.deepcopy(kwargs.get("message"))
         message.get("content")["selectedpage"] = "1"
-        message.get("content")["queryDefaultModel"] = "clip"
+        message.get("content")["queryDefaultModel"] = "siglip2"
         message.get("content")["returnCLIPConfig"] = True
         client = kwargs.get("client")
-        await clip_connection.ensure_query_model_loaded("clip", strict=False)
+        await clip_connection.ensure_query_model_loaded("siglip2", strict=True)
 
-        # fetch amount of variants from the variants subquery
-        variants_amount = int(query_dict.get("clip").get("subqueries", {}).get("variants", "0"))
+        variants_amount = int(query_dict.get("siglip2").get("subqueries", {}).get("variants", "0"))
         variant_results = []
-        queries = [query_dict.get("clip").get("query")]
+        queries = [query_dict.get("siglip2").get("query")]
         api_key = settings.GPT_API_KEY
 
         if variants_amount > 0 and api_key:
-            # Do GPT variants generation
-            await client.send_progress_step("Generating clip variants ...")
+            await client.send_progress_step("Generating SigLIP2 variants ...")
             queries += ClipVariantsUtil.fetch_variants(api_key, queries[0], variants_amount)
-            debug_info["clip_variants"] = queries
+            debug_info["siglip2_variants"] = queries
 
         for query in queries:
-            await client.send_progress_step(f"Query Clip with '{query}' ...")
+            await client.send_progress_step(f"Query SigLIP2 with '{query}' ...")
             clip_page_size = message.get("content").get("clipPageSize") or 5000
             clip_response = await clip_connection.query(query, message, clip_page_size, clip_page_size)
             if clip_response.results or clip_response.results == []:
                 variant_results.append(clip_response.results)
             returned_clip_config = clip_response.remote_response.get("clip_config")
             if returned_clip_config:
-                debug_info["clip_config"] = returned_clip_config
+                debug_info["siglip2_config"] = returned_clip_config
 
-        await client.send_progress_step("Combine Clip ...")
-        # Transform the results
+        await client.send_progress_step("Combine SigLIP2 ...")
         common_results = []
         scores = []
         first_results = variant_results[0]
@@ -61,7 +59,6 @@ class QPTClip(QueryPartTransformerBase):
                 common_results.append(filename)
                 scores.append(score)
 
-        # Sort the results by the scores
         if len(variant_results) > 1:
             common_results = [x for _, x in sorted(zip(scores, common_results))]
 

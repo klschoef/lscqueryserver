@@ -11,6 +11,7 @@ from core.query.filters.filter_hour import FilterHour
 from core.query.filters.filter_month import FilterMonth
 from core.query.filters.filter_objects import FilterObjects
 from core.query.filters.filter_places import FilterPlaces
+from core.query.filters.filter_siglip2 import FilterSigLIP2
 from core.query.filters.filter_texts import FilterTexts
 from core.query.filters.filter_weekday import FilterWeekday
 from core.query.filters.filter_year import FilterYear
@@ -20,6 +21,7 @@ default_filters = [
     FilterTexts(),
     FilterHeartRate(),
     FilterClip(),
+    FilterSigLIP2(),
     FilterGPT(),
     FilterAddress(),
     FilterCountry(),
