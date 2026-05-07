@@ -2,6 +2,7 @@ import logging
 import torch
 import open_clip
 from transformers import AutoModel, AutoProcessor
+from lsc_shared.clip.core.helpers.siglip_helper import project_siglip_features
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -28,62 +29,29 @@ class ClipContext:
         self.weights_name = weights_name
         logging.info('model loaded')
 
-    def _resolve_siglip_projection(self, kind="text"):
-        projection_attr_candidates = (
-            ["text_projection", "text_proj"] if kind == "text"
-            else ["visual_projection", "vision_projection", "image_projection", "visual_proj", "vision_proj"]
-        )
-        for attr in projection_attr_candidates:
-            proj = getattr(self.model, attr, None)
-            if proj is not None:
-                return proj
-        return None
-
-    def _project_siglip_features(self, output_obj, kind="text"):
-        if isinstance(output_obj, torch.Tensor):
-            return output_obj
-
-        embed_attr_candidates = (
-            ["text_embeds", "embeds"] if kind == "text"
-            else ["image_embeds", "embeds"]
-        )
-        for attr in embed_attr_candidates:
-            embeds = getattr(output_obj, attr, None)
-            if embeds is not None:
-                return embeds
-
-        pooled = getattr(output_obj, "pooler_output", None)
-        if pooled is not None:
-            projection = self._resolve_siglip_projection(kind=kind)
-            if projection is not None:
-                # Projection may be a module (common) or a tensor-like weight.
-                if callable(projection):
-                    return projection(pooled)
-                if isinstance(projection, torch.Tensor):
-                    return pooled @ projection
-            return pooled
-
-        if isinstance(output_obj, (tuple, list)) and len(output_obj) > 0:
-            return output_obj[0]
-
-        raise TypeError(f"Unsupported SigLIP2 {kind} feature output type: {type(output_obj)}")
-
     def _extract_siglip_text_features(self, inputs):
         # Use text-only API so we don't require image inputs.
         text_features = self.model.get_text_features(**inputs)
-        return self._project_siglip_features(text_features, kind="text")
+        return project_siglip_features(self.model, text_features, kind="text")
 
     def _extract_siglip_image_features(self, inputs):
         # Use image-only API so we don't require text inputs.
         image_features = self.model.get_image_features(**inputs)
-        return self._project_siglip_features(image_features, kind="image")
+        return project_siglip_features(self.model, image_features, kind="image")
 
     def encode_text_query(self, query):
         with torch.no_grad():
             if self.is_siglip2:
-                inputs = self.processor(text=[query], return_tensors="pt", padding="max_length", truncation=True)
+                inputs = self.processor(
+                    text=[query],
+                    return_tensors="pt",
+                    padding="max_length",
+                    truncation=True,
+                    max_length=64,
+                )
                 inputs = {k: v.to(self.device) for k, v in inputs.items()}
                 text_features = self._extract_siglip_text_features(inputs)
+                text_features = text_features.float()
                 return torch.nn.functional.normalize(text_features, dim=-1).cpu()
             else:
                 input_tokens = self.tokenizer(query).to(self.device)
@@ -96,6 +64,7 @@ class ClipContext:
                 inputs = self.processor(images=image.convert("RGB"), return_tensors="pt")
                 inputs = {k: v.to(self.device) for k, v in inputs.items()}
                 image_features = self._extract_siglip_image_features(inputs)
+                image_features = image_features.float()
                 return torch.nn.functional.normalize(image_features, dim=-1).cpu()
             else:
                 image_tensor = self.preprocess(image).unsqueeze(0).to(self.device)

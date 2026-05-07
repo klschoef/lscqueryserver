@@ -7,6 +7,7 @@ from PIL import Image
 from transformers import AutoModel, AutoProcessor
 
 from lsc_shared.clip.core.helpers.faiss_helper import prepare_folder_and_files
+from lsc_shared.clip.core.helpers.siglip_helper import project_siglip_features
 from lsc_shared.clip.core.index_context import IndexContext
 
 
@@ -41,51 +42,10 @@ def list_images(input_folder, recursive):
     return sorted(files)
 
 
-def _resolve_projection(model, kind="image"):
-    projection_attr_candidates = (
-        ["text_projection", "text_proj"] if kind == "text"
-        else ["visual_projection", "vision_projection", "image_projection", "visual_proj", "vision_proj"]
-    )
-    for attr in projection_attr_candidates:
-        proj = getattr(model, attr, None)
-        if proj is not None:
-            return proj
-    return None
-
-
-def _project_features(model, output_obj, kind="image"):
-    if isinstance(output_obj, torch.Tensor):
-        return output_obj
-
-    embed_attr_candidates = (
-        ["text_embeds", "embeds"] if kind == "text"
-        else ["image_embeds", "embeds"]
-    )
-    for attr in embed_attr_candidates:
-        embeds = getattr(output_obj, attr, None)
-        if embeds is not None:
-            return embeds
-
-    pooled = getattr(output_obj, "pooler_output", None)
-    if pooled is not None:
-        projection = _resolve_projection(model, kind=kind)
-        if projection is not None:
-            if callable(projection):
-                return projection(pooled)
-            if isinstance(projection, torch.Tensor):
-                return pooled @ projection
-        return pooled
-
-    if isinstance(output_obj, (tuple, list)) and len(output_obj) > 0:
-        return output_obj[0]
-
-    raise TypeError(f"Unsupported SigLIP2 {kind} feature output type: {type(output_obj)}")
-
-
 def _extract_image_features(model, inputs):
     # Use image-only API so indexing doesn't require text tokens.
     image_features = model.get_image_features(**inputs)
-    return _project_features(model, image_features, kind="image")
+    return project_siglip_features(model, image_features, kind="image")
 
 
 def main():
@@ -119,6 +79,7 @@ def main():
                 inputs = {k: v.to(device) for k, v in inputs.items()}
 
                 image_features = _extract_image_features(model, inputs)
+                image_features = image_features.float()
                 image_features = torch.nn.functional.normalize(image_features, dim=-1)
                 image_features = image_features.cpu().numpy()
 
