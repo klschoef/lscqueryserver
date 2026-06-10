@@ -137,3 +137,5 @@ hf-cache
 *.faiss
 
 /faiss
+
+shared/faiss/*
